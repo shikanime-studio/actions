@@ -27,7 +27,9 @@
 
     git-hooks = {
       url = "github:cachix/git-hooks.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+      };
     };
 
     nixpkgs.url = "github:nixos/nixpkgs/nixpkgs-unstable";
@@ -74,10 +76,10 @@
         {
           devenv.shells.default = {
             imports = [
-              devlib.devenvModules.git
+              devlib.devenvModules.github
               devlib.devenvModules.nix
               devlib.devenvModules.shell
-              devlib.devenvModules.shikanime-studio
+              devlib.devenvModules.shikanime
             ];
             license = {
               enable = true;
@@ -89,6 +91,7 @@
         };
       systems = [
         "x86_64-linux"
+        "x86_64-darwin"
         "aarch64-linux"
         "aarch64-darwin"
       ];
