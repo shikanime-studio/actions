@@ -20,7 +20,7 @@ runs:
           args+=(--profile "$PROFILE")
         fi
 
-        export SKAFFOLD_COLLECT_METRICS="false"
+        skaffold config set --global collect-metrics false
 
         skaffold build "${args[@]}"
         {
