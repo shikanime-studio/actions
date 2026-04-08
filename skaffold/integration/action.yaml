@@ -4,6 +4,10 @@ inputs:
   profile:
     description: Optional Skaffold profile name
     required: false
+  platforms:
+    default: '["linux/amd64","linux/arm64"]'
+    description: JSON array of target platforms (joined and passed to --platform)
+    required: false
 outputs:
   manifest:
     description: Rendered manifest YAML
@@ -14,10 +18,17 @@ runs:
     - id: skaffold
       env:
         PROFILE: ${{ inputs.profile }}
+        PLATFORMS: ${{ inputs.platforms }}
       run: |
         args=()
         if [ -n "$PROFILE" ]; then
           args+=(--profile "$PROFILE")
+        fi
+        if [ -n "$PLATFORMS" ]; then
+          PLATFORM_LIST="$(echo "$PLATFORMS" | jq -r 'join(",")')"
+          if [ -n "$PLATFORM_LIST" ]; then
+            args+=(--platform "$PLATFORM_LIST")
+          fi
         fi
 
         skaffold config set --global collect-metrics false
