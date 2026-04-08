@@ -25,10 +25,6 @@ runs:
           args+=(--profile "$PROFILE")
         fi
         if [ -n "$PLATFORMS" ]; then
-          if ! echo "$PLATFORMS" | jq -e 'type=="array" and all(. ; type=="string")' >/dev/null 2>&1; then
-            echo "::error::Invalid platforms JSON: $PLATFORMS"
-            exit 1
-          fi
           PLATFORM_LIST="$(echo "$PLATFORMS" | jq -r 'join(",")')"
           if [ -n "$PLATFORM_LIST" ]; then
             args+=(--platform "$PLATFORM_LIST")
