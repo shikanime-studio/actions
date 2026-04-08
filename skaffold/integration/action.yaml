@@ -6,7 +6,7 @@ inputs:
     required: false
   platforms:
     default: '["linux/amd64","linux/arm64"]'
-    description: JSON array of target platforms (joined and passed to --platform)
+    description: JSON array of target platforms
     required: false
 outputs:
   manifest:
@@ -17,26 +17,20 @@ runs:
   steps:
     - id: skaffold
       env:
-        PROFILE: ${{ inputs.profile }}
-        PLATFORMS: ${{ inputs.platforms }}
+        SKAFFOLD_PROFILE: ${{ inputs.profile }}
+        PLATFORMS_JSON: ${{ inputs.platforms }}
       run: |
-        args=()
-        if [ -n "$PROFILE" ]; then
-          args+=(--profile "$PROFILE")
-        fi
-        if [ -n "$PLATFORMS" ]; then
-          PLATFORM_LIST="$(echo "$PLATFORMS" | jq -r 'join(",")')"
-          if [ -n "$PLATFORM_LIST" ]; then
-            args+=(--platform "$PLATFORM_LIST")
-          fi
+        if [ -n "$PLATFORMS_JSON" ]; then
+          PLATFORMS="$(echo "$PLATFORMS_JSON" | jq -r 'join(",")')"
+          export SKAFFOLD_PLATFORM="$PLATFORMS"
         fi
 
         skaffold config set --global collect-metrics false
 
-        skaffold build "${args[@]}"
+        skaffold build
         {
           echo 'manifest<<EOF'
-          skaffold render "${args[@]}"
+          skaffold render
           echo 'EOF'
         } >> "$GITHUB_OUTPUT"
       shell: bash
