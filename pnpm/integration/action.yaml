@@ -12,6 +12,8 @@ inputs:
 runs:
   using: composite
   steps:
+    - run: corepack pnpm install --frozen-lockfile
+      shell: bash
     - env:
         RECURSIVE: ${{ inputs.recursive }}
         STAGES: ${{ inputs.stages }}
