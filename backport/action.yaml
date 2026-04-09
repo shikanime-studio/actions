@@ -54,8 +54,7 @@ runs:
         REGISTRY: ${{ inputs.registry }}
       if: inputs.method == 'github-pull-request'
       run: |
-        nix run "$REGISTRY#jujutsu" -- git \
-          init
+        nix run "$REGISTRY#jujutsu" -- git init
       shell: bash
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
@@ -65,20 +64,15 @@ runs:
         USERNAME: ${{ inputs.username }}
       if: inputs.method == 'github-pull-request'
       run: |
-        nix run "$REGISTRY#jujutsu" -- git fetch \
-          --remote origin
-
+        nix run "$REGISTRY#jujutsu" -- git fetch --remote origin
         nix run "$REGISTRY#jujutsu" -- config set \
           --repo templates.git_push_bookmark \
           "\"$USERNAME/push-\" ++ change_id.short()"
-
-        nix run "$REGISTRY#jujutsu" -- new \
-          "$TARGET_BRANCH@origin"
+        nix run "$REGISTRY#jujutsu" -- new "$TARGET_BRANCH@origin"
         nix run "$REGISTRY#jujutsu" -- rebase \
           -b @ \
           -o "$PR_URL"
-        nix run "$REGISTRY#jujutsu" -- git push \
-          --change @
+        nix run "$REGISTRY#jujutsu" -- git push --change @
 
         PUSH_BRANCH=$(nix run "$REGISTRY#jujutsu" -- log \
           --limit 1 \

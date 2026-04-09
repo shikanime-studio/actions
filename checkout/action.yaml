@@ -102,6 +102,7 @@ runs:
       if: inputs.method == 'ghstack'
       run: |
         git config --global advice.detachedHead false
+
         GHSTACKRC_PATH=$(mktemp)
         cat > "$GHSTACKRC_PATH" <<EOF
         [ghstack]
