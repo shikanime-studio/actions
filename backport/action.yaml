@@ -44,12 +44,10 @@ runs:
         TARGET_BRANCH: ${{ inputs.target-branch }}
       if: inputs.method == 'sapling-pull-request'
       run: |
-        nix run "$REGISTRY#sapling" -- pr \
-          unlink
+        nix run "$REGISTRY#sapling" -- pr unlink
         nix run "$REGISTRY#sapling" -- rebase \
           --dest "$TARGET_BRANCH"
-        nix run "$REGISTRY#sapling" -- pr \
-          submit
+        nix run "$REGISTRY#sapling" -- pr submit
       shell: bash
     - continue-on-error: true
       env:
