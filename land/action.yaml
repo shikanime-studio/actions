@@ -37,15 +37,10 @@ runs:
         REGISTRY: ${{ inputs.registry }}
       if: inputs.method == 'sapling-pull-request'
       run: |
-        nix run "$REGISTRY#sapling" -- rebase \
-          --dest "$BASE"
-
-        nix run "$REGISTRY#sapling" -- push \
-          --to "$BASE"
-
+        nix run "$REGISTRY#sapling" -- rebase --dest "$BASE"
+        nix run "$REGISTRY#sapling" -- push --to "$BASE"
         DELETE_BRANCH=$(gh pr view "$PR_URL" --json headRefName -q .headRefName)
-        nix run "$REGISTRY#sapling" -- push \
-          --delete $DELETE_BRANCH
+        nix run "$REGISTRY#sapling" -- push --delete $DELETE_BRANCH
       shell: bash
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
