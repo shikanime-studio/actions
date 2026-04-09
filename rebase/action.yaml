@@ -41,10 +41,8 @@ runs:
         REGISTRY: ${{ inputs.registry }}
       if: inputs.method == 'sapling-pull-request'
       run: |
-        nix run "$REGISTRY#sapling" -- rebase \
-          --dest "$BASE"
-        nix run "$REGISTRY#sapling" -- pr \
-          submit
+        nix run "$REGISTRY#sapling" -- rebase --dest "$BASE"
+        nix run "$REGISTRY#sapling" -- pr submit
       shell: bash
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
