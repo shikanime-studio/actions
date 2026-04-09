@@ -51,12 +51,12 @@ runs:
         skip_ci: true
     - id: stack
       if: steps.command.outputs.continue == 'true'
-      uses: shikanime-studio/actions/stack@v8
+      uses: shikanime-studio/actions/stack@v9
       with:
         github-token: ${{ inputs.github-token }}
         pull-request-url: ${{ inputs.pull-request-url }}
     - if: steps.command.outputs.continue == 'true'
-      uses: shikanime-studio/actions/checkout@v8
+      uses: shikanime-studio/actions/checkout@v9
       with:
         github-token: ${{ inputs.github-token }}
         gpg-passphrase: ${{ inputs.gpg-passphrase }}
@@ -67,7 +67,7 @@ runs:
         sign-commits: ${{ inputs.sign-commits }}
         username: ${{ inputs.username }}
     - if: steps.command.outputs.continue == 'true'
-      uses: shikanime-studio/actions/backport@v8
+      uses: shikanime-studio/actions/backport@v9
       with:
         github-token: ${{ inputs.github-token }}
         method: ${{ steps.stack.outputs.method }}

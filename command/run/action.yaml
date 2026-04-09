@@ -31,12 +31,12 @@ runs:
         skip_ci: true
     - id: stack
       if: steps.command.outputs.continue == 'true'
-      uses: shikanime-studio/actions/stack@v8
+      uses: shikanime-studio/actions/stack@v9
       with:
         github-token: ${{ inputs.github-token }}
         pull-request-url: ${{ inputs.pull-request-url }}
     - if: steps.command.outputs.continue == 'true'
-      uses: shikanime-studio/actions/run@v8
+      uses: shikanime-studio/actions/run@v9
       with:
         github-token: ${{ inputs.github-token }}
         head-ref: ${{ steps.stack.outputs.head-ref }}

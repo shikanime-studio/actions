@@ -213,7 +213,7 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - id: matrix
-        uses: shikanime-studio/actions/nix/setup-checks-jobs@v8
+        uses: shikanime-studio/actions/nix/setup-checks-jobs@v9
         with:
           systems: >-
             {
@@ -247,7 +247,7 @@ jobs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
       - id: matrix
-        uses: shikanime-studio/actions/nix/setup-packages-jobs@v8
+        uses: shikanime-studio/actions/nix/setup-packages-jobs@v9
         with:
           systems: >-
             {
