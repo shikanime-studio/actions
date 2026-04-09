@@ -5,29 +5,13 @@ inputs:
     default: main
     description: The base branch to rebase onto
     required: false
-  email:
-    default: github-actions[bot]@users.noreply.github.com
-    description: Email
-    required: false
-  extra-args:
-    default: ""
-    description: Extra arguments to pass to `nix run`
-    required: false
-  fullname:
-    default: github-actions[bot]
-    description: Full name
+  method:
+    default: github-pull-request
+    description: One of 'ghstack', 'sapling-pull-request', or 'github-pull-request' (required when invoking this action directly)
     required: false
   github-token:
     default: ${{ github.token }}
     description: The GitHub Token
-    required: false
-  gpg-passphrase:
-    default: ""
-    description: GPG private key passphrase
-    required: false
-  gpg-private-key:
-    default: ""
-    description: GPG private key for signing commits
     required: false
   pull-request-url:
     default: ${{ github.event.pull_request.html_url || github.event.issue.pull_request.html_url }}
@@ -37,72 +21,37 @@ inputs:
     default: nixpkgs
     description: Nix registry to use
     required: false
-  sign-commits:
-    default: "false"
-    description: Set to true to sign commits with GPG
-    required: false
-  username:
-    default: github-actions
-    description: Username
-    required: false
 runs:
   using: composite
   steps:
-    - id: stack
-      uses: shikanime-studio/actions/stack@v8
-      with:
-        github-token: ${{ inputs.github-token }}
-        pull-request-url: ${{ inputs.pull-request-url }}
-    - if: runner.debug == '1'
-      run: |
-        echo "DEBUG_FLAG=--debug" >> "$GITHUB_ENV"
-      shell: bash
-    - uses: shikanime-studio/actions/config@v8
-      with:
-        email: ${{ inputs.email }}
-        fullname: ${{ inputs.fullname }}
-        github-token: ${{ inputs.github-token }}
-        gpg-passphrase: ${{ inputs.gpg-passphrase }}
-        gpg-private-key: ${{ inputs.gpg-private-key }}
-        method: ${{ steps.stack.outputs.method }}
-        registry: ${{ inputs.registry }}
-        sign-commits: ${{ inputs.sign-commits }}
-        username: ${{ inputs.username }}
     - env:
         BASE: ${{ inputs.base }}
         PR_URL: ${{ inputs.pull-request-url }}
         REGISTRY: ${{ inputs.registry }}
-      if: steps.stack.outputs.method == 'ghstack'
+      if: inputs.method == 'ghstack'
       run: |
-        nix run "$REGISTRY#ghstack" -- $DEBUG_FLAG checkout "$PR_URL"
         git fetch origin "$BASE"
         git rebase "origin/$BASE"
-        nix run "$REGISTRY#ghstack" -- $DEBUG_FLAG submit
+        nix run "$REGISTRY#ghstack" -- submit
       shell: bash
     - env:
         BASE: ${{ inputs.base }}
         GH_TOKEN: ${{ inputs.github-token }}
         PR_URL: ${{ inputs.pull-request-url }}
         REGISTRY: ${{ inputs.registry }}
-      if: steps.stack.outputs.method == 'sapling-pull-request'
+      if: inputs.method == 'sapling-pull-request'
       run: |
-        nix run "$REGISTRY#sapling" -- pr pull \
-          --goto \
-          "$PR_URL" $DEBUG_FLAG
-        nix run "$REGISTRY#sapling" -- rebase \
-          --dest "$BASE" $DEBUG_FLAG
-        nix run "$REGISTRY#sapling" -- pr \
-          submit $DEBUG_FLAG
+        nix run "$REGISTRY#sapling" -- rebase --dest "$BASE"
+        nix run "$REGISTRY#sapling" -- pr submit
       shell: bash
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
         PR_URL: ${{ inputs.pull-request-url }}
-      if: steps.stack.outputs.method == 'github-pull-request'
+      if: inputs.method == 'github-pull-request'
       run: |
         BASE_BRANCH=$(gh pr view "$PR_URL" --json baseRefName -q .baseRefName)
 
         git fetch origin
-        gh pr checkout "$PR_URL"
         git rebase "origin/$BASE_BRANCH"
         git push --force-with-lease
       shell: bash

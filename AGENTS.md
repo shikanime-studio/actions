@@ -13,6 +13,17 @@ then trigger via PR comments.
 - Write step outputs using `$GITHUB_OUTPUT` (not the deprecated `::set-output`).
 - Keep scripts small and explicit (avoid clever one-liners); fail fast on
   unsupported values using `::warning::` / `::error::` as appropriate.
+- Keep command actions thin: orchestrate stack/config/checkout and delegate
+  behavior to the underlying action.
+- In consumer workflows, reference published actions as
+  `shikanime-studio/actions/xxx@vX`
+  instead of `./xxx` (use `./xxx` only for in-repo development/testing).
+- Centralize method-aware git operations to avoid copy-paste drift across
+  actions.
+- Avoid unused inputs and redundant steps; remove them when refactoring.
+- When changing action wiring or examples, update this file and README in the
+  same change.
+- Avoid changing files under `.github/` unless explicitly required.
 - Keep Markdown lines wrapped at 80 columns and run `nix fmt` before shipping.
 
 ## Comment Commands
