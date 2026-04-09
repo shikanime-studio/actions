@@ -58,9 +58,7 @@ runs:
         REGISTRY: ${{ inputs.registry }}
       continue-on-error: true
       if: inputs.method == 'github-pull-request'
-      run: |
-        nix run "$REGISTRY#jujutsu" -- git \
-          init
+      run: nix run "$REGISTRY#jujutsu" -- git init
       shell: bash
     - env:
         BASE: ${{ inputs.base }}
@@ -70,15 +68,11 @@ runs:
         USERNAME: ${{ inputs.username }}
       if: inputs.method == 'github-pull-request'
       run: |
-        nix run "$REGISTRY#jujutsu" -- git fetch \
-          --remote origin
-
+        nix run "$REGISTRY#jujutsu" -- git fetch --remote origin
         nix run "$REGISTRY#jujutsu" -- config set \
           --repo templates.git_push_bookmark \
           "\"$USERNAME/push-\" ++ change_id.short()"
-
-        nix run "$REGISTRY#jujutsu" -- git push \
-          --change @
+        nix run "$REGISTRY#jujutsu" -- git push --change @
 
         PUSH_BRANCH=$(nix run "$REGISTRY#jujutsu" -- log \
           --limit 1 \
