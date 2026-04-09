@@ -45,16 +45,13 @@ runs:
     - env:
         REGISTRY: ${{ inputs.registry }}
       if: inputs.method == 'ghstack'
-      run: |
-        nix run "$REGISTRY#ghstack" -- submit
+      run: nix run "$REGISTRY#ghstack" -- submit
       shell: bash
     - env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         REGISTRY: ${{ inputs.registry }}
       if: inputs.method == 'sapling-pull-request'
-      run: |
-        nix run "$REGISTRY#sapling" -- pr \
-          submit
+      run: nix run "$REGISTRY#sapling" -- pr submit
       shell: bash
     - env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
