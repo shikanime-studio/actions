@@ -5,13 +5,9 @@ inputs:
     default: ${{ github.token }}
     description: The GitHub Token
     required: false
-  gpg-passphrase:
-    default: ""
-    description: GPG private key passphrase
-    required: false
-  gpg-private-key:
-    default: ""
-    description: GPG private key for signing commits
+  method:
+    default: github-pull-request
+    description: One of 'ghstack', 'sapling-pull-request', or 'github-pull-request' (required when invoking this action directly)
     required: false
   pull-request-url:
     default: ${{ github.event.pull_request.html_url || github.event.issue.pull_request.html_url }}
@@ -20,10 +16,6 @@ inputs:
   registry:
     default: nixpkgs
     description: Nix registry to use
-    required: false
-  sign-commits:
-    default: "false"
-    description: Set to true to sign commits with GPG
     required: false
   target-branch:
     description: Target branch to backport onto
@@ -35,60 +27,37 @@ inputs:
 runs:
   using: composite
   steps:
-    - id: stack
-      uses: shikanime-studio/actions/stack@v8
-      with:
-        github-token: ${{ inputs.github-token }}
-        pull-request-url: ${{ inputs.pull-request-url }}
-    - if: runner.debug == '1'
-      run: |
-        echo "DEBUG_FLAG=--debug" >> "$GITHUB_ENV"
-      shell: bash
-    - uses: shikanime-studio/actions/config@v8
-      with:
-        github-token: ${{ inputs.github-token }}
-        gpg-passphrase: ${{ inputs.gpg-passphrase }}
-        gpg-private-key: ${{ inputs.gpg-private-key }}
-        method: ${{ steps.stack.outputs.method }}
-        registry: ${{ inputs.registry }}
-        sign-commits: ${{ inputs.sign-commits }}
-        username: ${{ inputs.username }}
     - env:
         PR_URL: ${{ inputs.pull-request-url }}
         REGISTRY: ${{ inputs.registry }}
         TARGET_BRANCH: ${{ inputs.target-branch }}
-      if: steps.stack.outputs.method == 'ghstack'
+      if: inputs.method == 'ghstack'
       run: |
-        nix run "$REGISTRY#ghstack" -- $DEBUG_FLAG checkout "$PR_URL"
-        nix run "$REGISTRY#ghstack" -- $DEBUG_FLAG unlink "$PR_URL"
+        nix run "$REGISTRY#ghstack" -- unlink "$PR_URL"
         git fetch origin "$TARGET_BRANCH"
         git rebase "origin/$TARGET_BRANCH"
-        nix run "$REGISTRY#ghstack" -- $DEBUG_FLAG submit
+        nix run "$REGISTRY#ghstack" -- submit
       shell: bash
     - env:
-        GH_TOKEN: ${{ inputs.github-token }}
         PR_URL: ${{ inputs.pull-request-url }}
         REGISTRY: ${{ inputs.registry }}
         TARGET_BRANCH: ${{ inputs.target-branch }}
-      if: steps.stack.outputs.method == 'sapling-pull-request'
+      if: inputs.method == 'sapling-pull-request'
       run: |
-        nix run "$REGISTRY#sapling" -- pr pull \
-          --goto \
-          "$PR_URL" $DEBUG_FLAG
         nix run "$REGISTRY#sapling" -- pr \
-          unlink $DEBUG_FLAG
+          unlink
         nix run "$REGISTRY#sapling" -- rebase \
-          --dest "$TARGET_BRANCH" $DEBUG_FLAG
+          --dest "$TARGET_BRANCH"
         nix run "$REGISTRY#sapling" -- pr \
-          submit $DEBUG_FLAG
+          submit
       shell: bash
     - continue-on-error: true
       env:
         REGISTRY: ${{ inputs.registry }}
-      if: steps.stack.outputs.method == 'github-pull-request'
+      if: inputs.method == 'github-pull-request'
       run: |
         nix run "$REGISTRY#jujutsu" -- git \
-          init $DEBUG_FLAG
+          init
       shell: bash
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
@@ -96,27 +65,27 @@ runs:
         REGISTRY: ${{ inputs.registry }}
         TARGET_BRANCH: ${{ inputs.target-branch }}
         USERNAME: ${{ inputs.username }}
-      if: steps.stack.outputs.method == 'github-pull-request'
+      if: inputs.method == 'github-pull-request'
       run: |
         nix run "$REGISTRY#jujutsu" -- git fetch \
-          --remote origin $DEBUG_FLAG
+          --remote origin
 
         nix run "$REGISTRY#jujutsu" -- config set \
           --repo templates.git_push_bookmark \
-          "\"$USERNAME/push-\" ++ change_id.short()" $DEBUG_FLAG
+          "\"$USERNAME/push-\" ++ change_id.short()"
 
         nix run "$REGISTRY#jujutsu" -- new \
-          "$TARGET_BRANCH@origin" $DEBUG_FLAG
+          "$TARGET_BRANCH@origin"
         nix run "$REGISTRY#jujutsu" -- rebase \
           -b @ \
-          -o "$PR_URL" $DEBUG_FLAG
+          -o "$PR_URL"
         nix run "$REGISTRY#jujutsu" -- git push \
-          --change @ $DEBUG_FLAG
+          --change @
 
         PUSH_BRANCH=$(nix run "$REGISTRY#jujutsu" -- log \
           --limit 1 \
           --template "{{bookmarks}}" \
-          @ $DEBUG_FLAG)
+          @)
 
         ORIG_TITLE=$(gh pr view "$PR_URL" --json title -q .title)
         ORIG_BODY_FILE=<(gh pr view "$PR_URL" --json body -q .body)

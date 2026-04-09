@@ -22,14 +22,18 @@ runs:
         pull-request-url: ${{ inputs.pull-request-url }}
     - env:
         HEAD_REF: ${{ inputs.head-ref }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        REPO: ${{ github.repository }}
       if: ${{ steps.stack.outputs.method == 'github-pull-request' }}
-      run: git push origin --delete "$HEAD_REF" || true
+      run: gh api -X DELETE "repos/$REPO/git/refs/heads/$HEAD_REF" || true
       shell: bash
     - env:
         HEAD_REF: ${{ inputs.head-ref }}
+        GH_TOKEN: ${{ inputs.github-token }}
+        REPO: ${{ github.repository }}
       if: ${{ steps.stack.outputs.method == 'ghstack' }}
       run: |
         for role in base head orig; do
-          git push origin --delete "${HEAD_REF%/head}/$role" || true
+          gh api -X DELETE "repos/$REPO/git/refs/heads/${HEAD_REF%/head}/$role" || true
         done
       shell: bash

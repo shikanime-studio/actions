@@ -37,10 +37,24 @@ runs:
         permissions: ${{ inputs.permissions }}
         reaction: ${{ inputs.reaction }}
         skip_ci: true
+    - id: stack
+      if: steps.command.outputs.continue == 'true'
+      uses: shikanime-studio/actions/stack@v8
+      with:
+        github-token: ${{ inputs.github-token }}
+        pull-request-url: ${{ inputs.pull-request-url }}
+    - if: steps.command.outputs.continue == 'true'
+      uses: shikanime-studio/actions/checkout@v8
+      with:
+        github-token: ${{ inputs.github-token }}
+        method: ${{ steps.stack.outputs.method }}
+        pull-request-url: ${{ inputs.pull-request-url }}
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.username }}
     - if: steps.command.outputs.continue == 'true'
       uses: shikanime-studio/actions/close@v8
       with:
         github-token: ${{ inputs.github-token }}
+        method: ${{ steps.stack.outputs.method }}
         pull-request-url: ${{ inputs.pull-request-url }}
         registry: ${{ inputs.registry }}
-        username: ${{ inputs.username }}

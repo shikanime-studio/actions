@@ -47,28 +47,12 @@ inputs:
 runs:
   using: composite
   steps:
-    - if: runner.debug == '1'
-      run: |
-        echo "DEBUG_FLAG=--debug" >> "$GITHUB_ENV"
-      shell: bash
-    - env:
-        METHOD: ${{ inputs.method }}
-      if: ${{ !contains('ghstack,sapling-pull-request,github-pull-request', inputs.method) }}
-      run: |
-        echo "Unknown update method '$METHOD'. Expected 'ghstack', 'sapling-pull-request' or 'github-pull-request'."
-        exit 1
-      shell: bash
-    - env:
-        REGISTRY: ${{ inputs.registry }}
-      run: |
-        nix $DEBUG_FLAG flake update \
-          --accept-flake-config
-      shell: bash
-    - uses: shikanime-studio/actions/config@v8
+    - uses: shikanime-studio/actions/checkout@v8
       with:
         email: ${{ inputs.email }}
         fullname: ${{ inputs.fullname }}
         github-token: ${{ inputs.github-token }}
+        github-url: github.com
         gpg-passphrase: ${{ inputs.gpg-passphrase }}
         gpg-private-key: ${{ inputs.gpg-private-key }}
         method: ${{ inputs.method }}
@@ -76,17 +60,21 @@ runs:
         sign-commits: ${{ inputs.sign-commits }}
         username: ${{ inputs.username }}
     - env:
+        REGISTRY: ${{ inputs.registry }}
+      run: nix flake update --accept-flake-config
+      shell: bash
+    - env:
         COMMIT_MESSAGE: ${{ inputs.commit-message }}
         REGISTRY: ${{ inputs.registry }}
       run: |
         nix run "$REGISTRY#sapling" -- ci \
-          --message "$COMMIT_MESSAGE" $DEBUG_FLAG
+          --message "$COMMIT_MESSAGE"
       shell: bash
     - env:
         REGISTRY: ${{ inputs.registry }}
       if: inputs.method == 'ghstack'
       run: |
-        nix run "$REGISTRY#ghstack" -- $DEBUG_FLAG submit
+        nix run "$REGISTRY#ghstack" -- submit
       shell: bash
     - env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
@@ -94,7 +82,7 @@ runs:
       if: inputs.method == 'sapling-pull-request'
       run: |
         nix run "$REGISTRY#sapling" -- pr \
-          submit $DEBUG_FLAG
+          submit
       shell: bash
     - env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
@@ -103,7 +91,7 @@ runs:
       if: inputs.method == 'github-pull-request'
       run: |
         nix run "$REGISTRY#jujutsu" -- git \
-          init $DEBUG_FLAG
+          init
       shell: bash
     - env:
         BASE: ${{ inputs.base }}
@@ -114,19 +102,19 @@ runs:
       if: inputs.method == 'github-pull-request'
       run: |
         nix run "$REGISTRY#jujutsu" -- git fetch \
-          --remote origin $DEBUG_FLAG
+          --remote origin
 
         nix run "$REGISTRY#jujutsu" -- config set \
           --repo templates.git_push_bookmark \
-          "\"$USERNAME/push-\" ++ change_id.short()" $DEBUG_FLAG
+          "\"$USERNAME/push-\" ++ change_id.short()"
 
         nix run "$REGISTRY#jujutsu" -- git push \
-          --change @ $DEBUG_FLAG
+          --change @
 
         PUSH_BRANCH=$(nix run "$REGISTRY#jujutsu" -- log \
           --limit 1 \
           --template "{{bookmarks}}" \
-          @ $DEBUG_FLAG)
+          @)
 
         EXISTING=$(gh pr list \
           --head "$PUSH_BRANCH" \
