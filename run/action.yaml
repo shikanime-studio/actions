@@ -1,13 +1,13 @@
 name: Run
-description: Trigger a workflow dispatch on a pull request head ref
+description: Trigger a workflow dispatch
 inputs:
   github-token:
     default: ${{ github.token }}
     description: The GitHub Token
     required: false
-  head-ref:
-    default: ""
-    description: Pull request head ref (required when invoking this action directly)
+  ref:
+    default: ${{ github.ref }}
+    description: Git ref to run the workflow on
     required: false
   workflow:
     description: Workflow name or path to run (must support workflow_dispatch)
@@ -18,11 +18,11 @@ runs:
     - env:
         GH_REPO: ${{ github.repository }}
         GH_TOKEN: ${{ inputs.github-token }}
-        REF: ${{ inputs.head-ref }}
+        REF: ${{ inputs.ref }}
         WORKFLOW: ${{ inputs.workflow }}
       run: |
         if [ -z "$REF" ]; then
-          echo "Error: could not determine PR head ref"
+          echo "Error: ref not provided"
           exit 1
         fi
         gh workflow run "$WORKFLOW" \
