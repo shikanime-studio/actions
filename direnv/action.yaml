@@ -16,17 +16,14 @@ outputs:
 runs:
   using: composite
   steps:
-    - env:
-        REGISTRY: ${{ inputs.registry }}
-      run: nix run "$REGISTRY#direnv" -- allow .
+    - run: nix run "${{ inputs.registry }}#direnv" -- allow .
       shell: bash
       working-directory: ${{ inputs.path }}
     - id: export
       env:
         DIRENV_WARN_TIMEOUT: "0"
-        REGISTRY: ${{ inputs.registry }}
       run: |
-        ENV="$(nix run "$REGISTRY#direnv" -- export json)"
+        ENV="$(nix run "${{ inputs.registry }}#direnv" -- export json)"
         {
           echo 'env<<EOF'
           echo "$ENV"

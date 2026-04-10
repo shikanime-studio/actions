@@ -25,8 +25,8 @@ runs:
   steps:
     - id: matrix
       env:
-        SYSTEMS: ${{ inputs.systems }}
         EXCLUDES: ${{ inputs.excludes }}
+        SYSTEMS: ${{ inputs.systems }}
       run: |
         JSON="$(nix flake show --json --all-systems --accept-flake-config --no-pure-eval)"
         MATRIX="$(

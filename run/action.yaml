@@ -16,12 +16,9 @@ runs:
   using: composite
   steps:
     - env:
-        GH_REPO: ${{ github.repository }}
         GH_TOKEN: ${{ inputs.github-token }}
-        REF: ${{ inputs.ref }}
-        WORKFLOW: ${{ inputs.workflow }}
       run: |
-        gh workflow run "$WORKFLOW" \
-          --ref "$REF" \
-          --repo "$GH_REPO"
+        gh workflow run "${{ inputs.workflow }}" \
+          --ref "${{ inputs.ref }}" \
+          --repo "${{ github.repository }}"
       shell: bash

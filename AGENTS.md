@@ -10,6 +10,10 @@ then trigger via PR comments.
   JavaScript is required.
 - Pass action inputs into scripts via `env:` instead of embedding `${{ ... }}`
   inside the script body.
+- Avoid "alias" variables that just mirror inputs (e.g. `REGISTRY=...` then
+  `nix run "$REGISTRY#..."`); template `${{ inputs.* }}` directly in commands.
+- Prefer step-level `env:` for tokens/CLI auth variables (e.g. `GH_TOKEN`,
+  `GITHUB_TOKEN`) instead of `export` in the script body.
 - Write step outputs using `$GITHUB_OUTPUT` (not the deprecated `::set-output`).
 - Keep scripts small and explicit (avoid clever one-liners); fail fast on
   unsupported values using `::warning::` / `::error::` as appropriate.
