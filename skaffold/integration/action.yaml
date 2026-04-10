@@ -17,21 +17,19 @@ runs:
   steps:
     - id: skaffold
       run: |
-        SKAFFOLD_PLATFORM="$(echo '${{ inputs.platforms }}' | jq -r 'join(",")')"
-
         args=()
         if [ -n "${{ inputs.profile }}" ]; then
           args+=(-p "${{ inputs.profile }}")
         fi
 
-        skaffold config set --global collect-metrics false
+        SKAFFOLD_PLATFORM="$(echo '${{ inputs.platforms }}' | jq -r 'join(",")')"
         if [ -n "$SKAFFOLD_PLATFORM" ]; then
-          SKAFFOLD_PLATFORM="$SKAFFOLD_PLATFORM" skaffold build "${args[@]}"
-          MANIFEST="$(SKAFFOLD_PLATFORM="$SKAFFOLD_PLATFORM" skaffold render "${args[@]}")"
-        else
-          skaffold build "${args[@]}"
-          MANIFEST="$(skaffold render "${args[@]}")"
+          args+=(--platform="$SKAFFOLD_PLATFORM")
         fi
+
+        skaffold config set --global collect-metrics false
+        skaffold build "${args[@]}"
+        MANIFEST="$(skaffold render "${args[@]}")"
         {
           echo 'manifest<<EOF'
           echo "$MANIFEST"
