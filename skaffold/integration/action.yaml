@@ -26,11 +26,11 @@ runs:
         fi
 
         skaffold config set --global collect-metrics false
-
         skaffold build
+        MANIFEST="$(skaffold render)"
         {
           echo 'manifest<<EOF'
-          skaffold render
+          echo "$MANIFEST"
           echo 'EOF'
         } >> "$GITHUB_OUTPUT"
       shell: bash

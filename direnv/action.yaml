@@ -21,9 +21,10 @@ runs:
         DIRENV_WARN_TIMEOUT: "0"
         REGISTRY: ${{ inputs.registry }}
       run: |
+        ENV="$(nix run "$REGISTRY#direnv" -- export json)"
         {
           echo 'env<<EOF'
-          nix run "$REGISTRY#direnv" -- export json
+          echo "$ENV"
           echo 'EOF'
         } >> "$GITHUB_OUTPUT"
       shell: bash
