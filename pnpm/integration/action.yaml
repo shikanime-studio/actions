@@ -18,7 +18,7 @@ runs:
         RECURSIVE: ${{ inputs.recursive }}
         STAGES: ${{ inputs.stages }}
       run: |
-        stages="$(echo "$STAGES" | jq -r '.[]')"
+        STAGES="$(echo "$STAGES" | jq -r '.[]')"
 
         args=()
         if [ "$RECURSIVE" = "true" ]; then
@@ -27,5 +27,5 @@ runs:
 
         while IFS= read -r stage; do
           corepack pnpm "${args[@]}" run --if-present "$stage"
-        done <<< "$stages"
+        done <<< "$STAGES"
       shell: bash
