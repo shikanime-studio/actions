@@ -13,15 +13,14 @@ runs:
   using: composite
   steps:
     - id: matrix
-      env:
-        SYSTEMS: ${{ inputs.systems }}
       run: |
+        SYSTEMS='${{ inputs.systems }}'
         JSON="$(nix flake show --json --all-systems --accept-flake-config --no-pure-eval)"
         MATRIX="$(
           jq -c '
             .checks as $root
             | ($root | keys) as $available
-            | (env.SYSTEMS | fromjson) as $systems
+            | ($systemsJson | fromjson) as $systems
             | ($systems | to_entries)
             | map(. as $pair
                   | ($pair.value
@@ -30,7 +29,7 @@ runs:
                     )
                 )
             | flatten
-          ' <<< "$JSON"
+          ' --arg systemsJson "$SYSTEMS" <<< "$JSON"
         )"
         echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
         continue=$([ "$MATRIX" = "[]" ] && echo "false" || echo "true")

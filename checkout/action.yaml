@@ -57,51 +57,34 @@ runs:
       uses: actions/checkout@v6
       with:
         token: ${{ inputs.github-token }}
-    - env:
-        EMAIL: ${{ inputs.email }}
-        FULLNAME: ${{ inputs.fullname }}
-        REGISTRY: ${{ inputs.registry }}
-      if: inputs.method == 'sapling-pull-request'
+    - if: inputs.method == 'sapling-pull-request'
       run: |
-        nix run "$REGISTRY#sapling" -- config \
-          --local ui.username "$FULLNAME <$EMAIL>"
+        nix run "${{ inputs.registry }}#sapling" -- config \
+          --local ui.username "${{ inputs.fullname }} <${{ inputs.email }}>"
       shell: bash
-    - env:
-        GH_TOKEN: ${{ inputs.github-token }}
-        GITHUB_URL: ${{ inputs.github-url }}
-        USERNAME: ${{ inputs.username }}
-      if: inputs.method == 'ghstack'
+    - if: inputs.method == 'ghstack'
       run: |
         git config --global advice.detachedHead false
         GHSTACKRC="${GHSTACKRC:-$HOME/.ghstackrc}"
         cat > "$GHSTACKRC" <<EOF
         [ghstack]
-        github_url = $GITHUB_URL
-        github_oauth = $GH_TOKEN
-        github_username = $USERNAME
+        github_url = ${{ inputs.github-url }}
+        github_oauth = ${{ inputs.github-token }}
+        github_username = ${{ inputs.username }}
         EOF
       shell: bash
-    - env:
-        PR_URL: ${{ inputs.pull-request-url }}
-        REGISTRY: ${{ inputs.registry }}
-      if: inputs.pull-request-url != '' && inputs.method == 'ghstack'
+    - if: inputs.pull-request-url != '' && inputs.method == 'ghstack'
       run: |
-        nix run "$REGISTRY#ghstack" -- checkout "$PR_URL"
+        nix run "${{ inputs.registry }}#ghstack" -- checkout "${{ inputs.pull-request-url }}"
       shell: bash
-    - env:
-        PR_URL: ${{ inputs.pull-request-url }}
-        REGISTRY: ${{ inputs.registry }}
-      if: inputs.pull-request-url != '' && inputs.method == 'sapling-pull-request'
+    - if: inputs.pull-request-url != '' && inputs.method == 'sapling-pull-request'
       run: |
-        nix run "$REGISTRY#sapling" -- pr pull \
+        nix run "${{ inputs.registry }}#sapling" -- pr pull \
           --goto \
-          "$PR_URL"
+          "${{ inputs.pull-request-url }}"
       shell: bash
-    - env:
-        GH_TOKEN: ${{ inputs.github-token }}
-        PR_URL: ${{ inputs.pull-request-url }}
-      if: inputs.pull-request-url != '' && inputs.method == 'github-pull-request'
-      run: gh pr checkout "$PR_URL"
+    - if: inputs.pull-request-url != '' && inputs.method == 'github-pull-request'
+      run: GH_TOKEN="${{ inputs.github-token }}" gh pr checkout "${{ inputs.pull-request-url }}"
       shell: bash
     - id: importGPG
       if: ${{ inputs.sign-commits == 'true' }}
@@ -111,24 +94,18 @@ runs:
         git_user_signingkey: true
         gpg_private_key: ${{ inputs.gpg-private-key }}
         passphrase: ${{ inputs.gpg-passphrase }}
-    - env:
-        GPG_KEY_ID: ${{ steps.importGPG.outputs.keyid }}
-        REGISTRY: ${{ inputs.registry }}
-      if: ${{ inputs.method == 'sapling-pull-request' && inputs.sign-commits == 'true' }}
+    - if: ${{ inputs.method == 'sapling-pull-request' && inputs.sign-commits == 'true' }}
       run: |
-        nix run "$REGISTRY#sapling" -- config \
-          --local gpg.key "$GPG_KEY_ID" \
+        nix run "${{ inputs.registry }}#sapling" -- config \
+          --local gpg.key "${{ steps.importGPG.outputs.keyid }}" \
           --local commit.gpgsign true
       shell: bash
-    - env:
-        GPG_KEY_ID: ${{ steps.importGPG.outputs.keyid }}
-        REGISTRY: ${{ inputs.registry }}
-      if: ${{ inputs.method == 'github-pull-request' && inputs.sign-commits == 'true' }}
+    - if: ${{ inputs.method == 'github-pull-request' && inputs.sign-commits == 'true' }}
       run: |
-        nix run "$REGISTRY#jujutsu" -- config set \
+        nix run "${{ inputs.registry }}#jujutsu" -- config set \
           --repo signing.backend gpg
-        nix run "$REGISTRY#jujutsu" -- config set \
+        nix run "${{ inputs.registry }}#jujutsu" -- config set \
           --repo signing.sign-all true
-        nix run "$REGISTRY#jujutsu" -- config set \
-          --repo signing.key "$GPG_KEY_ID"
+        nix run "${{ inputs.registry }}#jujutsu" -- config set \
+          --repo signing.key "${{ steps.importGPG.outputs.keyid }}"
       shell: bash

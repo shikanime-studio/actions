@@ -25,11 +25,11 @@ outputs:
 runs:
   using: composite
   steps:
-    - env:
-        GH_TOKEN: ${{ inputs.github-token }}
-        PR_URL: ${{ inputs.pull-request-url }}
-      id: stack
+    - id: stack
       run: |
+        export GH_TOKEN='${{ inputs.github-token }}'
+        PR_URL='${{ inputs.pull-request-url }}'
+
         JSON=$(gh pr view "$PR_URL" --json headRefName,baseRefName,body)
         BRANCH=$(echo "$JSON" | jq -r .headRefName)
         BASE=$(echo "$JSON" | jq -r .baseRefName)

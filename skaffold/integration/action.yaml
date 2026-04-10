@@ -16,18 +16,23 @@ runs:
   using: composite
   steps:
     - id: skaffold
-      env:
-        SKAFFOLD_PROFILE: ${{ inputs.profile }}
-        PLATFORMS_JSON: ${{ inputs.platforms }}
       run: |
+        SKAFFOLD_PROFILE='${{ inputs.profile }}'
+        PLATFORMS_JSON='${{ inputs.platforms }}'
+
         if [ -n "$PLATFORMS_JSON" ]; then
           PLATFORMS="$(echo "$PLATFORMS_JSON" | jq -r 'join(",")')"
           export SKAFFOLD_PLATFORM="$PLATFORMS"
         fi
 
+        args=()
+        if [ -n "$SKAFFOLD_PROFILE" ]; then
+          args+=(-p "$SKAFFOLD_PROFILE")
+        fi
+
         skaffold config set --global collect-metrics false
-        skaffold build
-        MANIFEST="$(skaffold render)"
+        skaffold build "${args[@]}"
+        MANIFEST="$(skaffold render "${args[@]}")"
         {
           echo 'manifest<<EOF'
           echo "$MANIFEST"

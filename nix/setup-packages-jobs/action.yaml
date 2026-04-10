@@ -24,16 +24,15 @@ runs:
   using: composite
   steps:
     - id: matrix
-      env:
-        SYSTEMS: ${{ inputs.systems }}
-        EXCLUDES: ${{ inputs.excludes }}
       run: |
+        SYSTEMS='${{ inputs.systems }}'
+        EXCLUDES='${{ inputs.excludes }}'
         JSON="$(nix flake show --json --all-systems --accept-flake-config --no-pure-eval)"
         MATRIX="$(
           jq -c '
             .packages
             | to_entries
-            | (env.SYSTEMS | fromjson) as $systems
+            | ($systemsJson | fromjson) as $systems
             | ($systems | to_entries) as $pairs
             | ($pairs
                | reduce .[] as $p ({}; . + ($p.value | reduce .[] as $s ({}; . + {($s): $p.key})))
@@ -41,7 +40,7 @@ runs:
             | map(select(.key as $s | $sys2runner | has($s)))
             | reduce .[] as $entry ([]; . += (
                   ( ($entry.value | keys)
-                    | (env.EXCLUDES | fromjson) as $excludes
+                    | ($excludesJson | fromjson) as $excludes
                     | map(select(. as $name | $excludes | index($name) | not))
                   )
                   | map({
@@ -50,7 +49,7 @@ runs:
                       name: .
                     })
                 ))
-          ' <<< "$JSON"
+          ' --arg systemsJson "$SYSTEMS" --arg excludesJson "$EXCLUDES" <<< "$JSON"
         )"
         echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
         continue=$([ "$MATRIX" = "[]" ] && echo "false" || echo "true")
