@@ -102,15 +102,13 @@ runs:
       if: inputs.method == 'ghstack'
       run: |
         git config --global advice.detachedHead false
-
-        GHSTACKRC_PATH=$(mktemp)
-        cat > "$GHSTACKRC_PATH" <<EOF
+        GHSTACKRC="${GHSTACKRC:-$HOME/.ghstackrc}"
+        cat > "$GHSTACKRC" <<EOF
         [ghstack]
         github_url = $GITHUB_URL
         github_oauth = $GH_TOKEN
         github_username = $USERNAME
         EOF
-        echo "GHSTACKRC_PATH=$GHSTACKRC_PATH" >> "$GITHUB_ENV"
       shell: bash
     - env:
         PR_URL: ${{ inputs.pull-request-url }}
