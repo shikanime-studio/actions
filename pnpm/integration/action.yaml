@@ -15,12 +15,10 @@ runs:
     - run: corepack pnpm install --frozen-lockfile
       shell: bash
     - run: |
-        RECURSIVE='${{ inputs.recursive }}'
-        STAGES_JSON='${{ inputs.stages }}'
-        STAGES="$(echo "$STAGES_JSON" | jq -r '.[]')"
+        STAGES="$(echo '${{ inputs.stages }}' | jq -r '.[]')"
 
         args=()
-        if [ "$RECURSIVE" = "true" ]; then
+        if [ '${{ inputs.recursive }}' = "true" ]; then
           args+=(--recursive)
         fi
 

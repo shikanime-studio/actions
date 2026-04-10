@@ -34,9 +34,10 @@ runs:
         platforms: ${{ inputs.extra-platforms }}
     - id: extra-platforms-config
       if: ${{ inputs.extra-platforms != '' }}
+      env:
+        EXTRA_PLATFORMS: ${{ inputs.extra-platforms }}
       shell: bash
       run: |
-        EXTRA_PLATFORMS='${{ inputs.extra-platforms }}'
         NIX_PLATFORMS=""
 
         IFS=',' read -ra parts <<<"$EXTRA_PLATFORMS"

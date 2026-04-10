@@ -21,15 +21,17 @@ runs:
         github-token: ${{ inputs.github-token }}
         pull-request-url: ${{ inputs.pull-request-url }}
     - if: ${{ steps.stack.outputs.method == 'github-pull-request' }}
-      run: GH_TOKEN="${{ inputs.github-token }}" gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${{ inputs.head-ref }}" || true
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/${{ inputs.head-ref }}" || true
       shell: bash
     - if: ${{ steps.stack.outputs.method == 'ghstack' }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
       run: |
-        export GH_TOKEN='${{ inputs.github-token }}'
-        HEAD_REF='${{ inputs.head-ref }}'
-        REPO='${{ github.repository }}'
+        PREFIX="$(printf '%s' "${{ inputs.head-ref }}" | sed 's#/head$##')"
 
         for role in base head orig; do
-          gh api -X DELETE "repos/$REPO/git/refs/heads/${HEAD_REF%/head}/$role" || true
+          gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/$PREFIX/$role" || true
         done
       shell: bash

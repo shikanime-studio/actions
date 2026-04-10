@@ -15,8 +15,10 @@ inputs:
 runs:
   using: composite
   steps:
-    - run: |
-        GH_TOKEN="${{ inputs.github-token }}" gh workflow run "${{ inputs.workflow }}" \
+    - env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        gh workflow run "${{ inputs.workflow }}" \
           --ref "${{ inputs.ref }}" \
           --repo "${{ github.repository }}"
       shell: bash

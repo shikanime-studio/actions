@@ -41,34 +41,32 @@ runs:
       run: nix run "${{ inputs.registry }}#ghstack" -- submit
       shell: bash
     - if: inputs.method == 'sapling-pull-request'
-      run: GITHUB_TOKEN="${{ inputs.github-token }}" nix run "${{ inputs.registry }}#sapling" -- pr submit
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: nix run "${{ inputs.registry }}#sapling" -- pr submit
       shell: bash
     - continue-on-error: true
       if: inputs.method == 'github-pull-request'
       run: nix run "${{ inputs.registry }}#jujutsu" -- git init
       shell: bash
     - if: inputs.method == 'github-pull-request'
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
       run: |
-        BASE='${{ inputs.base }}'
-        COMMIT_MESSAGE='${{ inputs.commit-message }}'
-        REGISTRY='${{ inputs.registry }}'
-        USERNAME='${{ inputs.username }}'
-        export GITHUB_TOKEN='${{ inputs.github-token }}'
-
-        nix run "$REGISTRY#jujutsu" -- git fetch --remote origin
-        nix run "$REGISTRY#jujutsu" -- config set \
+        nix run "${{ inputs.registry }}#jujutsu" -- git fetch --remote origin
+        nix run "${{ inputs.registry }}#jujutsu" -- config set \
           --repo templates.git_push_bookmark \
-          "\"$USERNAME/push-\" ++ change_id.short()"
-        nix run "$REGISTRY#jujutsu" -- git push --change @
+          "\"${{ inputs.username }}/push-\" ++ change_id.short()"
+        nix run "${{ inputs.registry }}#jujutsu" -- git push --change @
 
-        PUSH_BRANCH=$(nix run "$REGISTRY#jujutsu" -- log \
+        PUSH_BRANCH=$(nix run "${{ inputs.registry }}#jujutsu" -- log \
           --limit 1 \
           --template "{{bookmarks}}" \
           @)
 
         EXISTING=$(gh pr list \
           --head "$PUSH_BRANCH" \
-          --base "$BASE" \
+          --base "${{ inputs.base }}" \
           --state open \
           --json number \
           -q '.[0].number' || true)
@@ -76,10 +74,10 @@ runs:
         if [ -z "$EXISTING" ]; then
           gh pr create \
             --head "$PUSH_BRANCH" \
-            --base "$BASE" \
-            --title "$COMMIT_MESSAGE" \
+            --base "${{ inputs.base }}" \
+            --title "${{ inputs.commit-message }}" \
             --body "Automated flake update."
         else
-          echo "Existing open PR #$EXISTING for $PUSH_BRANCH -> $BASE, not creating a new one."
+          echo "Existing open PR #$EXISTING for $PUSH_BRANCH -> ${{ inputs.base }}, not creating a new one."
         fi
       shell: bash

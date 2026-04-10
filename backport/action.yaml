@@ -47,34 +47,30 @@ runs:
         nix run "${{ inputs.registry }}#jujutsu" -- git init
       shell: bash
     - if: inputs.method == 'github-pull-request'
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
       run: |
-        PR_URL='${{ inputs.pull-request-url }}'
-        REGISTRY='${{ inputs.registry }}'
-        TARGET_BRANCH='${{ inputs.target-branch }}'
-        USERNAME='${{ inputs.username }}'
-        export GH_TOKEN='${{ inputs.github-token }}'
-
-        nix run "$REGISTRY#jujutsu" -- git fetch --remote origin
-        nix run "$REGISTRY#jujutsu" -- config set \
+        nix run "${{ inputs.registry }}#jujutsu" -- git fetch --remote origin
+        nix run "${{ inputs.registry }}#jujutsu" -- config set \
           --repo templates.git_push_bookmark \
-          "\"$USERNAME/push-\" ++ change_id.short()"
-        nix run "$REGISTRY#jujutsu" -- new "$TARGET_BRANCH@origin"
-        nix run "$REGISTRY#jujutsu" -- rebase \
+          "\"${{ inputs.username }}/push-\" ++ change_id.short()"
+        nix run "${{ inputs.registry }}#jujutsu" -- new "${{ inputs.target-branch }}@origin"
+        nix run "${{ inputs.registry }}#jujutsu" -- rebase \
           -b @ \
-          -o "$PR_URL"
-        nix run "$REGISTRY#jujutsu" -- git push --change @
+          -o "${{ inputs.pull-request-url }}"
+        nix run "${{ inputs.registry }}#jujutsu" -- git push --change @
 
-        PUSH_BRANCH=$(nix run "$REGISTRY#jujutsu" -- log \
+        PUSH_BRANCH=$(nix run "${{ inputs.registry }}#jujutsu" -- log \
           --limit 1 \
           --template "{{bookmarks}}" \
           @)
 
-        ORIG_TITLE=$(gh pr view "$PR_URL" --json title -q .title)
-        ORIG_BODY_FILE=<(gh pr view "$PR_URL" --json body -q .body)
+        ORIG_TITLE=$(gh pr view "${{ inputs.pull-request-url }}" --json title -q .title)
+        ORIG_BODY_FILE=<(gh pr view "${{ inputs.pull-request-url }}" --json body -q .body)
 
         gh pr create \
           --head "$PUSH_BRANCH" \
-          --base "$TARGET_BRANCH" \
+          --base "${{ inputs.target-branch }}" \
           --title "$ORIG_TITLE" \
           --body-file "$ORIG_BODY_FILE"
       shell: bash
