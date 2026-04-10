@@ -22,7 +22,7 @@ runs:
       run: |
         {
           echo 'env<<EOF'
-          nix run "$REGISTRY#direnv" -- exec / direnv export json
+          nix run "$REGISTRY#direnv" -- export json
           echo 'EOF'
         } >> "$GITHUB_OUTPUT"
       shell: bash
