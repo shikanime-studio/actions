@@ -31,13 +31,17 @@ runs:
         nix run "${{ inputs.registry }}#ghstack" -- submit
       shell: bash
     - if: inputs.method == 'sapling-pull-request'
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
       run: |
-        GH_TOKEN="${{ inputs.github-token }}" nix run "${{ inputs.registry }}#sapling" -- rebase --dest "${{ inputs.base }}"
-        GH_TOKEN="${{ inputs.github-token }}" nix run "${{ inputs.registry }}#sapling" -- pr submit
+        nix run "${{ inputs.registry }}#sapling" -- rebase --dest "${{ inputs.base }}"
+        nix run "${{ inputs.registry }}#sapling" -- pr submit
       shell: bash
     - if: inputs.method == 'github-pull-request'
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
       run: |
-        BASE_BRANCH=$(GH_TOKEN="${{ inputs.github-token }}" gh pr view "${{ inputs.pull-request-url }}" --json baseRefName -q .baseRefName)
+        BASE_BRANCH=$(gh pr view "${{ inputs.pull-request-url }}" --json baseRefName -q .baseRefName)
 
         git fetch origin
         git rebase "origin/$BASE_BRANCH"

@@ -27,5 +27,7 @@ runs:
           "${{ inputs.pull-request-url }}"
       shell: bash
     - if: inputs.method == 'sapling-pull-request' || inputs.method == 'github-pull-request'
-      run: GH_TOKEN="${{ inputs.github-token }}" gh pr close --delete-branch "${{ inputs.pull-request-url }}"
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: gh pr close --delete-branch "${{ inputs.pull-request-url }}"
       shell: bash
