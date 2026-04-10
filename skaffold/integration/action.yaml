@@ -22,9 +22,9 @@ runs:
           args+=(-p "${{ inputs.profile }}")
         fi
 
-        SKAFFOLD_PLATFORM="$(echo '${{ inputs.platforms }}' | jq -r 'join(",")')"
-        if [ -n "$SKAFFOLD_PLATFORM" ]; then
-          args+=(--platform="$SKAFFOLD_PLATFORM")
+        PLATFORM="$(echo '${{ inputs.platforms }}' | jq -r 'join(",")')"
+        if [ -n "$PLATFORM" ]; then
+          args+=(--platform="$PLATFORM")
         fi
 
         skaffold config set --global collect-metrics false
