@@ -18,6 +18,7 @@ runs:
   steps:
     - id: export
       env:
+        DIRENV_WARN_TIMEOUT: "0"
         REGISTRY: ${{ inputs.registry }}
       run: |
         {
