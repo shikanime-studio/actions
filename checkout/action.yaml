@@ -48,14 +48,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - id: importGPG
-      if: ${{ inputs.sign-commits == 'true' }}
-      uses: crazy-max/ghaction-import-gpg@v7
-      with:
-        git_commit_gpgsign: true
-        git_user_signingkey: true
-        gpg_private_key: ${{ inputs.gpg-private-key }}
-        passphrase: ${{ inputs.gpg-passphrase }}
     - if: inputs.method == 'sapling-pull-request'
       uses: actions/checkout@v6
       with:
@@ -73,27 +65,6 @@ runs:
       run: |
         nix run "$REGISTRY#sapling" -- config \
           --local ui.username "$FULLNAME <$EMAIL>"
-      shell: bash
-    - env:
-        GPG_KEY_ID: ${{ steps.importGPG.outputs.keyid }}
-        REGISTRY: ${{ inputs.registry }}
-      if: ${{ inputs.method == 'sapling-pull-request' && inputs.sign-commits == 'true' }}
-      run: |
-        nix run "$REGISTRY#sapling" -- config \
-          --local gpg.key "$GPG_KEY_ID" \
-          --local commit.gpgsign true
-      shell: bash
-    - env:
-        GPG_KEY_ID: ${{ steps.importGPG.outputs.keyid }}
-        REGISTRY: ${{ inputs.registry }}
-      if: ${{ inputs.method == 'github-pull-request' && inputs.sign-commits == 'true' }}
-      run: |
-        nix run "$REGISTRY#jujutsu" -- config set \
-          --repo signing.backend gpg
-        nix run "$REGISTRY#jujutsu" -- config set \
-          --repo signing.sign-all true
-        nix run "$REGISTRY#jujutsu" -- config set \
-          --repo signing.key "$GPG_KEY_ID"
       shell: bash
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
@@ -131,4 +102,33 @@ runs:
         PR_URL: ${{ inputs.pull-request-url }}
       if: inputs.pull-request-url != '' && inputs.method == 'github-pull-request'
       run: gh pr checkout "$PR_URL"
+      shell: bash
+    - id: importGPG
+      if: ${{ inputs.sign-commits == 'true' }}
+      uses: crazy-max/ghaction-import-gpg@v7
+      with:
+        git_commit_gpgsign: true
+        git_user_signingkey: true
+        gpg_private_key: ${{ inputs.gpg-private-key }}
+        passphrase: ${{ inputs.gpg-passphrase }}
+    - env:
+        GPG_KEY_ID: ${{ steps.importGPG.outputs.keyid }}
+        REGISTRY: ${{ inputs.registry }}
+      if: ${{ inputs.method == 'sapling-pull-request' && inputs.sign-commits == 'true' }}
+      run: |
+        nix run "$REGISTRY#sapling" -- config \
+          --local gpg.key "$GPG_KEY_ID" \
+          --local commit.gpgsign true
+      shell: bash
+    - env:
+        GPG_KEY_ID: ${{ steps.importGPG.outputs.keyid }}
+        REGISTRY: ${{ inputs.registry }}
+      if: ${{ inputs.method == 'github-pull-request' && inputs.sign-commits == 'true' }}
+      run: |
+        nix run "$REGISTRY#jujutsu" -- config set \
+          --repo signing.backend gpg
+        nix run "$REGISTRY#jujutsu" -- config set \
+          --repo signing.sign-all true
+        nix run "$REGISTRY#jujutsu" -- config set \
+          --repo signing.key "$GPG_KEY_ID"
       shell: bash
