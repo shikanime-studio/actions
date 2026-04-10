@@ -84,7 +84,9 @@ runs:
           "${{ inputs.pull-request-url }}"
       shell: bash
     - if: inputs.pull-request-url != '' && inputs.method == 'github-pull-request'
-      run: GH_TOKEN="${{ inputs.github-token }}" gh pr checkout "${{ inputs.pull-request-url }}"
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: gh pr checkout "${{ inputs.pull-request-url }}"
       shell: bash
     - id: importGPG
       if: ${{ inputs.sign-commits == 'true' }}

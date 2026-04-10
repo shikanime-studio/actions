@@ -28,15 +28,19 @@ runs:
       run: nix run "${{ inputs.registry }}#ghstack" -- land "${{ inputs.pull-request-url }}"
       shell: bash
     - if: inputs.method == 'sapling-pull-request'
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
       run: |
         nix run "${{ inputs.registry }}#sapling" -- rebase --dest "${{ inputs.base }}"
         nix run "${{ inputs.registry }}#sapling" -- push --to "${{ inputs.base }}"
-        DELETE_BRANCH=$(GH_TOKEN="${{ inputs.github-token }}" gh pr view "${{ inputs.pull-request-url }}" --json headRefName -q .headRefName)
+        DELETE_BRANCH=$(gh pr view "${{ inputs.pull-request-url }}" --json headRefName -q .headRefName)
         nix run "${{ inputs.registry }}#sapling" -- push --delete "$DELETE_BRANCH"
       shell: bash
     - if: inputs.method == 'github-pull-request'
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
       run: |
-        GH_TOKEN="${{ inputs.github-token }}" gh pr merge \
+        gh pr merge \
           --rebase \
           --delete-branch \
           "${{ inputs.pull-request-url }}"
