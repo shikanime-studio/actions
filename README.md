@@ -46,9 +46,9 @@ jobs:
     steps:
       - continue-on-error: true
         id: createGithubAppToken
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v2
         with:
-          client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
+          app-id: ${{ vars.OPERATOR_APP_ID }}
           permission-contents: write
           permission-issues: write
           permission-pull-requests: write
@@ -83,9 +83,9 @@ jobs:
     steps:
       - continue-on-error: true
         id: createGithubAppToken
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v2
         with:
-          client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
+          app-id: ${{ vars.OPERATOR_APP_ID }}
           permission-contents: write
           permission-issues: write
           permission-pull-requests: write
@@ -120,9 +120,9 @@ jobs:
     steps:
       - continue-on-error: true
         id: createGithubAppToken
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v2
         with:
-          client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
+          app-id: ${{ vars.OPERATOR_APP_ID }}
           permission-contents: write
           permission-issues: write
           permission-pull-requests: write
@@ -152,9 +152,9 @@ jobs:
     steps:
       - continue-on-error: true
         id: createGithubAppToken
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v2
         with:
-          client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
+          app-id: ${{ vars.OPERATOR_APP_ID }}
           permission-contents: write
           permission-issues: write
           permission-pull-requests: write
@@ -298,7 +298,7 @@ Example job:
         id: createGithubAppToken
         uses: actions/create-github-app-token@v3
         with:
-          client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
+          app-id: ${{ vars.OPERATOR_APP_ID }}
           permission-actions: write
           permission-issues: write
           permission-pull-requests: read
@@ -325,9 +325,9 @@ jobs:
     steps:
       - continue-on-error: true
         id: createGithubAppToken
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v2
         with:
-          client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
+          app-id: ${{ vars.OPERATOR_APP_ID }}
           permission-contents: write
           permission-issues: write
           permission-pull-requests: write
@@ -353,9 +353,9 @@ jobs:
     steps:
       - continue-on-error: true
         id: createGithubAppToken
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v2
         with:
-          client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
+          app-id: ${{ vars.OPERATOR_APP_ID }}
           permission-contents: write
           permission-issues: write
           permission-pull-requests: write
@@ -384,9 +384,9 @@ jobs:
     steps:
       - continue-on-error: true
         id: createGithubAppToken
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v2
         with:
-          client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
+          app-id: ${{ vars.OPERATOR_APP_ID }}
           permission-contents: write
           private-key: ${{ secrets.OPERATOR_PRIVATE_KEY }}
       - uses: actions/checkout@v6
