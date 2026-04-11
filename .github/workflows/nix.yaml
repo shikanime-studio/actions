@@ -10,7 +10,7 @@ jobs:
         id: createGithubAppToken
         uses: actions/create-github-app-token@v3
         with:
-          client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
+          app-id: ${{ vars.OPERATOR_APP_ID }}
           permission-contents: read
           private-key: ${{ secrets.OPERATOR_PRIVATE_KEY }}
       - uses: actions/checkout@v6
@@ -42,7 +42,7 @@ jobs:
         id: createGithubAppToken
         uses: actions/create-github-app-token@v3
         with:
-          client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
+          app-id: ${{ vars.OPERATOR_APP_ID }}
           permission-contents: read
           private-key: ${{ secrets.OPERATOR_PRIVATE_KEY }}
       - uses: actions/checkout@v6
@@ -75,7 +75,7 @@ jobs:
         id: createGithubAppToken
         uses: actions/create-github-app-token@v3
         with:
-          client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
+          app-id: ${{ vars.OPERATOR_APP_ID }}
           permission-contents: read
           private-key: ${{ secrets.OPERATOR_PRIVATE_KEY }}
       - uses: actions/checkout@v6
@@ -99,7 +99,7 @@ jobs:
         id: createGithubAppToken
         uses: actions/create-github-app-token@v3
         with:
-          client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
+          app-id: ${{ vars.OPERATOR_APP_ID }}
           permission-contents: read
           private-key: ${{ secrets.OPERATOR_PRIVATE_KEY }}
       - uses: actions/checkout@v6
