@@ -80,13 +80,6 @@ then trigger via PR comments.
   - Trigger: `pull_request: closed`
   - Action: `shikanime-studio/actions/cleanup`
 
-## Utilities
-
-- stack
-  - Determines stack method and parent PR detection; used internally by
-    multiple agents.
-  - Action: `shikanime-studio/actions/stack`
-
 ## Nix Utilities
 
 - nix/setup

@@ -60,13 +60,8 @@ runs:
         github_token: ${{ inputs.github-token }}
         permissions: ${{ inputs.permissions }}
         reaction: ${{ inputs.reaction }}
-    - id: stack
+    - id: checkout
       if: steps.command.outputs.continue == 'true'
-      uses: shikanime-studio/actions/stack@v9
-      with:
-        github-token: ${{ inputs.github-token }}
-        pull-request-url: ${{ inputs.pull-request-url }}
-    - if: steps.command.outputs.continue == 'true'
       uses: shikanime-studio/actions/checkout@v9
       with:
         email: ${{ inputs.email }}
@@ -74,7 +69,6 @@ runs:
         github-token: ${{ inputs.github-token }}
         gpg-passphrase: ${{ inputs.gpg-passphrase }}
         gpg-private-key: ${{ inputs.gpg-private-key }}
-        method: ${{ steps.stack.outputs.method }}
         pull-request-url: ${{ inputs.pull-request-url }}
         registry: ${{ inputs.registry }}
         sign-commits: ${{ inputs.sign-commits }}
@@ -84,6 +78,6 @@ runs:
       with:
         base: ${{ inputs.base }}
         github-token: ${{ inputs.github-token }}
-        method: ${{ steps.stack.outputs.method }}
+        method: ${{ steps.checkout.outputs.method }}
         pull-request-url: ${{ inputs.pull-request-url }}
         registry: ${{ inputs.registry }}
