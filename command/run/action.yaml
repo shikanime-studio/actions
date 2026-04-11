@@ -39,5 +39,5 @@ runs:
       uses: shikanime-studio/actions/run@v9
       with:
         github-token: ${{ inputs.github-token }}
-        head-ref: ${{ steps.stack.outputs.head-ref }}
+        ref: ${{ steps.checkout.outputs.head-ref }}
         workflow: ${{ steps.command.outputs.params }}
