@@ -24,24 +24,31 @@ inputs:
 runs:
   using: composite
   steps:
-    - if: inputs.method == 'ghstack'
-      run: nix run "${{ inputs.registry }}#ghstack" -- land "${{ inputs.pull-request-url }}"
+    - env:
+        PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
+        REGISTRY: ${{ inputs.registry }}
+      if: inputs.method == 'ghstack'
+      run: nix run "$REGISTRY#ghstack" -- land "$PULL_REQUEST_URL"
       shell: bash
-    - if: inputs.method == 'sapling-pull-request'
-      env:
+    - env:
+        BASE: ${{ inputs.base }}
         GH_TOKEN: ${{ inputs.github-token }}
+        PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
+        REGISTRY: ${{ inputs.registry }}
+      if: inputs.method == 'sapling-pull-request'
       run: |
-        nix run "${{ inputs.registry }}#sapling" -- rebase --dest "${{ inputs.base }}"
-        nix run "${{ inputs.registry }}#sapling" -- push --to "${{ inputs.base }}"
-        DELETE_BRANCH=$(gh pr view "${{ inputs.pull-request-url }}" --json headRefName -q .headRefName)
-        nix run "${{ inputs.registry }}#sapling" -- push --delete "$DELETE_BRANCH"
+        nix run "$REGISTRY#sapling" -- rebase --dest "$BASE"
+        nix run "$REGISTRY#sapling" -- push --to "$BASE"
+        DELETE_BRANCH=$(gh pr view "$PULL_REQUEST_URL" --json headRefName -q .headRefName)
+        nix run "$REGISTRY#sapling" -- push --delete "$DELETE_BRANCH"
       shell: bash
-    - if: inputs.method == 'github-pull-request'
-      env:
+    - env:
         GH_TOKEN: ${{ inputs.github-token }}
+        PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
+      if: inputs.method == 'github-pull-request'
       run: |
         gh pr merge \
           --rebase \
           --delete-branch \
-          "${{ inputs.pull-request-url }}"
+          "$PULL_REQUEST_URL"
       shell: bash

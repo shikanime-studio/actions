@@ -46,7 +46,7 @@ jobs:
     steps:
       - continue-on-error: true
         id: createGithubAppToken
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v3.1.1
         with:
           client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
           permission-contents: write
@@ -83,7 +83,7 @@ jobs:
     steps:
       - continue-on-error: true
         id: createGithubAppToken
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v3.1.1
         with:
           client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
           permission-contents: write
@@ -120,7 +120,7 @@ jobs:
     steps:
       - continue-on-error: true
         id: createGithubAppToken
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v3.1.1
         with:
           client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
           permission-contents: write
@@ -152,7 +152,7 @@ jobs:
     steps:
       - continue-on-error: true
         id: createGithubAppToken
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v3.1.1
         with:
           client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
           permission-contents: write
@@ -296,7 +296,7 @@ Example job:
     steps:
       - continue-on-error: true
         id: createGithubAppToken
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v3.1.1
         with:
           client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
           permission-actions: write
@@ -325,7 +325,7 @@ jobs:
     steps:
       - continue-on-error: true
         id: createGithubAppToken
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v3.1.1
         with:
           client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
           permission-contents: write
@@ -353,7 +353,7 @@ jobs:
     steps:
       - continue-on-error: true
         id: createGithubAppToken
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v3.1.1
         with:
           client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
           permission-contents: write
@@ -384,7 +384,7 @@ jobs:
     steps:
       - continue-on-error: true
         id: createGithubAppToken
-        uses: actions/create-github-app-token@v3
+        uses: actions/create-github-app-token@v3.1.1
         with:
           client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
           permission-contents: write

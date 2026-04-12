@@ -15,14 +15,17 @@ outputs:
 runs:
   using: composite
   steps:
-    - id: skaffold
+    - env:
+        PLATFORMS: ${{ inputs.platforms }}
+        PROFILE: ${{ inputs.profile }}
+      id: skaffold
       run: |
         args=()
-        if [ -n "${{ inputs.profile }}" ]; then
-          args+=(-p "${{ inputs.profile }}")
+        if [ -n "$PROFILE" ]; then
+          args+=(-p "$PROFILE")
         fi
 
-        PLATFORM="$(echo '${{ inputs.platforms }}' | jq -r 'join(",")')"
+        PLATFORM="$(echo '$PLATFORMS' | jq -r 'join(",")')"
         if [ -n "$PLATFORM" ]; then
           args+=(--platform="$PLATFORM")
         fi

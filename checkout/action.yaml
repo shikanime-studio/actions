@@ -60,12 +60,14 @@ runs:
     - uses: actions/checkout@v6
       with:
         fetch-depth: 0
+        persist-credentials: false
         token: ${{ inputs.github-token }}
-    - id: stack
-      env:
+    - env:
         GH_TOKEN: ${{ inputs.github-token }}
+        PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
+      id: stack
       run: |
-        if [[ -z "${{ inputs.pull-request-url }}" ]]; then
+        if [[ -z "$PULL_REQUEST_URL" ]]; then
           echo "method=github-pull-request" >> "$GITHUB_OUTPUT"
           echo "head-ref=" >> "$GITHUB_OUTPUT"
           echo "base-ref=" >> "$GITHUB_OUTPUT"
@@ -73,7 +75,7 @@ runs:
           exit 0
         fi
 
-        JSON="$(gh pr view "${{ inputs.pull-request-url }}" --json headRefName,baseRefName,body)"
+        JSON="$(gh pr view "$PULL_REQUEST_URL" --json headRefName,baseRefName,body)"
         BRANCH="$(printf '%s' "$JSON" | jq -r .headRefName)"
         BASE="$(printf '%s' "$JSON" | jq -r .baseRefName)"
         BODY="$(printf '%s' "$JSON" | jq -r .body)"
@@ -115,47 +117,65 @@ runs:
           echo "parent-pull-request-url=" >> "$GITHUB_OUTPUT"
         fi
       shell: bash
-    - if: steps.stack.outputs.method == 'sapling-pull-request'
+    - env:
+        EMAIL: ${{ inputs.email }}
+        FULLNAME: ${{ inputs.fullname }}
+        REGISTRY: ${{ inputs.registry }}
+      if: steps.stack.outputs.method == 'sapling-pull-request'
       run: |
-        nix run "${{ inputs.registry }}#sapling" -- config \
-          --local ui.username "${{ inputs.fullname }} <${{ inputs.email }}>"
+        nix run "$REGISTRY#sapling" -- config \
+          --local ui.username "$FULLNAME <$EMAIL>"
       shell: bash
-    - if: steps.stack.outputs.method == 'ghstack'
+    - env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GITHUB_URL: ${{ inputs.github-url }}
+        USERNAME: ${{ inputs.username }}
+      if: steps.stack.outputs.method == 'ghstack'
       run: |
         git config --global advice.detachedHead false
         GHSTACKRC="${GHSTACKRC:-$HOME/.ghstackrc}"
         cat > "$GHSTACKRC" <<EOF
         [ghstack]
-        github_url = ${{ inputs.github-url }}
-        github_oauth = ${{ inputs.github-token }}
-        github_username = ${{ inputs.username }}
+        github_url = $GITHUB_URL
+        github_oauth = $GITHUB_TOKEN
+        github_username = $USERNAME
         EOF
       shell: bash
-    - if: inputs.pull-request-url != '' && steps.stack.outputs.method == 'ghstack'
+    - env:
+        PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
+        REGISTRY: ${{ inputs.registry }}
+      if: inputs.pull-request-url != '' && steps.stack.outputs.method == 'ghstack'
       run: |
-        nix run "${{ inputs.registry }}#ghstack" -- checkout "${{ inputs.pull-request-url }}"
+        nix run "$REGISTRY#ghstack" -- checkout "$PULL_REQUEST_URL"
       shell: bash
-    - if: inputs.pull-request-url != '' && steps.stack.outputs.method == 'sapling-pull-request'
+    - env:
+        PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
+        REGISTRY: ${{ inputs.registry }}
+      if: inputs.pull-request-url != '' && steps.stack.outputs.method == 'sapling-pull-request'
       run: |
-        nix run "${{ inputs.registry }}#sapling" -- pr pull \
+        nix run "$REGISTRY#sapling" -- pr pull \
           --goto \
-          "${{ inputs.pull-request-url }}"
+          "$PULL_REQUEST_URL"
       shell: bash
-    - if: inputs.pull-request-url != '' && steps.stack.outputs.method == 'github-pull-request'
-      env:
+    - env:
         GH_TOKEN: ${{ inputs.github-token }}
-      run: gh pr checkout "${{ inputs.pull-request-url }}"
+        PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
+      if: inputs.pull-request-url != '' && steps.stack.outputs.method == 'github-pull-request'
+      run: gh pr checkout "$PULL_REQUEST_URL"
       shell: bash
-    - id: gpg
+    - env:
+        GPG_PASSPHRASE: ${{ inputs.gpg-passphrase }}
+        GPG_PRIVATE_KEY: ${{ inputs.gpg-private-key }}
+      id: gpg
       if: ${{ inputs.sign-commits == 'true' }}
       run: |
         KEY_FILE="$(mktemp)"
         cat <<'EOF' > "$KEY_FILE"
-        ${{ inputs.gpg-private-key }}
+        $GPG_PRIVATE_KEY
         EOF
 
-        if [[ -n "${{ inputs.gpg-passphrase }}" ]]; then
-          gpg --batch --pinentry-mode loopback --passphrase "${{ inputs.gpg-passphrase }}" --import "$KEY_FILE"
+        if [[ -n "$GPG_PASSPHRASE" ]]; then
+          gpg --batch --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --import "$KEY_FILE"
         else
           gpg --batch --import "$KEY_FILE"
         fi
@@ -166,7 +186,7 @@ runs:
         git config --global user.signingkey "$KEY_ID"
         git config --global commit.gpgsign true
 
-        if [[ -n "${{ inputs.gpg-passphrase }}" ]]; then
+        if [[ -n "$GPG_PASSPHRASE" ]]; then
           mkdir -p ~/.gnupg
           chmod 700 ~/.gnupg
           echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
@@ -176,23 +196,29 @@ runs:
           KEYGRIP="$(gpg --with-colons --with-keygrip --list-secret-keys "$KEY_ID" | awk -F: '$1 == "grp" {print $10; exit}')"
           gpg-connect-agent reloadagent /bye
 
-          echo "${{ inputs.gpg-passphrase }}" | /usr/lib/gnupg/gpg-preset-passphrase --preset "$KEYGRIP"
+          echo "$GPG_PASSPHRASE" | /usr/lib/gnupg/gpg-preset-passphrase --preset "$KEYGRIP"
         fi
 
         rm -f "$KEY_FILE"
       shell: bash
-    - if: ${{ steps.stack.outputs.method == 'sapling-pull-request' && inputs.sign-commits == 'true' }}
+    - env:
+        REGISTRY: ${{ inputs.registry }}
+        KEYID: ${{ steps.gpg.outputs.keyid }}
+      if: ${{ steps.stack.outputs.method == 'sapling-pull-request' && inputs.sign-commits == 'true' }}
       run: |
-        nix run "${{ inputs.registry }}#sapling" -- config \
-          --local gpg.key "${{ steps.gpg.outputs.keyid }}" \
+        nix run "$REGISTRY#sapling" -- config \
+          --local gpg.key "$KEYID" \
           --local commit.gpgsign true
       shell: bash
-    - if: ${{ steps.stack.outputs.method == 'github-pull-request' && inputs.sign-commits == 'true' }}
+    - env:
+        REGISTRY: ${{ inputs.registry }}
+        KEYID: ${{ steps.gpg.outputs.keyid }}
+      if: ${{ steps.stack.outputs.method == 'github-pull-request' && inputs.sign-commits == 'true' }}
       run: |
-        nix run "${{ inputs.registry }}#jujutsu" -- config set \
+        nix run "$REGISTRY#jujutsu" -- config set \
           --repo signing.backend gpg
-        nix run "${{ inputs.registry }}#jujutsu" -- config set \
+        nix run "$REGISTRY#jujutsu" -- config set \
           --repo signing.sign-all true
-        nix run "${{ inputs.registry }}#jujutsu" -- config set \
-          --repo signing.key "${{ steps.gpg.outputs.keyid }}"
+        nix run "$REGISTRY#jujutsu" -- config set \
+          --repo signing.key "$KEYID"
       shell: bash
