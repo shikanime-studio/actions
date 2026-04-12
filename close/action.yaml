@@ -21,17 +21,17 @@ runs:
   using: composite
   steps:
     - env:
-        PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
-        REGISTRY: ${{ inputs.registry }}
+        INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
+        INPUT_REGISTRY: ${{ inputs.registry }}
       if: inputs.method == 'ghstack'
       run: |
-        nix run "$REGISTRY#ghstack" -- action \
+        nix run "$INPUT_REGISTRY#ghstack" -- action \
           --close \
-          "$PULL_REQUEST_URL"
+          "$INPUT_PULL_REQUEST_URL"
       shell: bash
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
-        PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
+        INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
       if: inputs.method == 'sapling-pull-request' || inputs.method == 'github-pull-request'
-      run: gh pr close --delete-branch "$PULL_REQUEST_URL"
+      run: gh pr close --delete-branch "$INPUT_PULL_REQUEST_URL"
       shell: bash

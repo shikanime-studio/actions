@@ -73,11 +73,11 @@ runs:
         username: ${{ inputs.username }}
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
-        PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
+        INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
         PARAMS: ${{ steps.command.outputs.params }}
       if: steps.backport.outcome == 'failure'
       run: |
-        PR_URL="$PULL_REQUEST_URL"
+        PR_URL="$INPUT_PULL_REQUEST_URL"
         TARGET_BRANCH="$PARAMS"
 
         IFS=' ' read -r SCHEME HOST OWNER REPO <<<"$(

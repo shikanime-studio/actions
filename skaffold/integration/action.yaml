@@ -16,16 +16,16 @@ runs:
   using: composite
   steps:
     - env:
-        PLATFORMS: ${{ inputs.platforms }}
-        PROFILE: ${{ inputs.profile }}
+        INPUT_PLATFORMS: ${{ inputs.platforms }}
+        INPUT_PROFILE: ${{ inputs.profile }}
       id: skaffold
       run: |
         args=()
-        if [ -n "$PROFILE" ]; then
-          args+=(-p "$PROFILE")
+        if [ -n "$INPUT_PROFILE" ]; then
+          args+=(-p "$INPUT_PROFILE")
         fi
 
-        PLATFORM="$(echo '$PLATFORMS' | jq -r 'join(",")')"
+        PLATFORM="$(printf '%s' "$INPUT_PLATFORMS" | jq -r 'join(",")')"
         if [ -n "$PLATFORM" ]; then
           args+=(--platform="$PLATFORM")
         fi

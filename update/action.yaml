@@ -34,51 +34,51 @@ runs:
     - run: nix flake update --accept-flake-config
       shell: bash
     - env:
-        COMMIT_MESSAGE: ${{ inputs.commit-message }}
-        REGISTRY: ${{ inputs.registry }}
+        INPUT_COMMIT_MESSAGE: ${{ inputs.commit-message }}
+        INPUT_REGISTRY: ${{ inputs.registry }}
       run: |
-        nix run "$REGISTRY#sapling" -- ci \
-          --message "$COMMIT_MESSAGE"
+        nix run "$INPUT_REGISTRY#sapling" -- ci \
+          --message "$INPUT_COMMIT_MESSAGE"
       shell: bash
     - env:
-        REGISTRY: ${{ inputs.registry }}
+        INPUT_REGISTRY: ${{ inputs.registry }}
       if: inputs.method == 'ghstack'
-      run: nix run "$REGISTRY#ghstack" -- submit
+      run: nix run "$INPUT_REGISTRY#ghstack" -- submit
       shell: bash
     - env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-        REGISTRY: ${{ inputs.registry }}
+        INPUT_REGISTRY: ${{ inputs.registry }}
       if: inputs.method == 'sapling-pull-request'
-      run: nix run "$REGISTRY#sapling" -- pr submit
+      run: nix run "$INPUT_REGISTRY#sapling" -- pr submit
       shell: bash
     - continue-on-error: true
       env:
-        REGISTRY: ${{ inputs.registry }}
+        INPUT_REGISTRY: ${{ inputs.registry }}
       if: inputs.method == 'github-pull-request'
-      run: nix run "$REGISTRY#jujutsu" -- git init
+      run: nix run "$INPUT_REGISTRY#jujutsu" -- git init
       shell: bash
     - env:
-        BASE: ${{ inputs.base }}
-        COMMIT_MESSAGE: ${{ inputs.commit-message }}
         GH_TOKEN: ${{ inputs.github-token }}
-        REGISTRY: ${{ inputs.registry }}
-        USERNAME: ${{ inputs.username }}
+        INPUT_BASE: ${{ inputs.base }}
+        INPUT_COMMIT_MESSAGE: ${{ inputs.commit-message }}
+        INPUT_REGISTRY: ${{ inputs.registry }}
+        INPUT_USERNAME: ${{ inputs.username }}
       if: inputs.method == 'github-pull-request'
       run: |
-        nix run "$REGISTRY#jujutsu" -- git fetch --remote origin
-        nix run "$REGISTRY#jujutsu" -- config set \
+        nix run "$INPUT_REGISTRY#jujutsu" -- git fetch --remote origin
+        nix run "$INPUT_REGISTRY#jujutsu" -- config set \
           --repo templates.git_push_bookmark \
-          "\"$USERNAME/push-\" ++ change_id.short()"
-        nix run "$REGISTRY#jujutsu" -- git push --change @
+          "\"$INPUT_USERNAME/push-\" ++ change_id.short()"
+        nix run "$INPUT_REGISTRY#jujutsu" -- git push --change @
 
-        PUSH_BRANCH=$(nix run "$REGISTRY#jujutsu" -- log \
+        PUSH_BRANCH=$(nix run "$INPUT_REGISTRY#jujutsu" -- log \
           --limit 1 \
           --template "{{bookmarks}}" \
           @)
 
         EXISTING=$(gh pr list \
           --head "$PUSH_BRANCH" \
-          --base "$BASE" \
+          --base "$INPUT_BASE" \
           --state open \
           --json number \
           -q '.[0].number' || true)
@@ -86,10 +86,10 @@ runs:
         if [ -z "$EXISTING" ]; then
           gh pr create \
             --head "$PUSH_BRANCH" \
-            --base "$BASE" \
-            --title "$COMMIT_MESSAGE" \
+            --base "$INPUT_BASE" \
+            --title "$INPUT_COMMIT_MESSAGE" \
             --body "Automated flake update."
         else
-          echo "Existing open PR #$EXISTING for $PUSH_BRANCH -> $BASE, not creating a new one."
+          echo "Existing open PR #$EXISTING for $PUSH_BRANCH -> $INPUT_BASE, not creating a new one."
         fi
       shell: bash

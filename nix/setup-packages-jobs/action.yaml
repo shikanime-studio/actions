@@ -24,8 +24,8 @@ runs:
   using: composite
   steps:
     - env:
-        EXCLUDES: ${{ inputs.excludes }}
-        SYSTEMS: ${{ inputs.systems }}
+        INPUT_EXCLUDES: ${{ inputs.excludes }}
+        INPUT_SYSTEMS: ${{ inputs.systems }}
       id: matrix
       run: |
         JSON="$(nix flake show --json --all-systems --accept-flake-config --no-pure-eval)"
@@ -33,7 +33,7 @@ runs:
           jq -c '
             .packages
             | to_entries
-            | (env.SYSTEMS | fromjson) as $systems
+            | (env.INPUT_SYSTEMS | fromjson) as $systems
             | ($systems | to_entries) as $pairs
             | ($pairs
                | reduce .[] as $p ({}; . + ($p.value | reduce .[] as $s ({}; . + {($s): $p.key})))
@@ -41,7 +41,7 @@ runs:
             | map(select(.key as $s | $sys2runner | has($s)))
             | reduce .[] as $entry ([]; . += (
                   ( ($entry.value | keys)
-                    | (env.EXCLUDES | fromjson) as $excludes
+                    | (env.INPUT_EXCLUDES | fromjson) as $excludes
                     | map(select(. as $name | $excludes | index($name) | not))
                   )
                   | map({
