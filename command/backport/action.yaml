@@ -84,6 +84,16 @@ runs:
         )"
 
         RUN_URL="$SCHEME://$HOST/$OWNER/$REPO/actions/runs/${{ github.run_id }}"
-        gh pr comment "$PR_URL" --body "Backport to '$TARGET_BRANCH' failed. Logs: $RUN_URL"
+
+        gh pr comment "$PR_URL" --body "$(
+          cat <<EOF
+        ### ⚠️ Cannot proceed with operation
+
+        - targetBranch: \`$TARGET_BRANCH\`
+        - logs: $RUN_URL
+
+        > Backport failed
+        EOF
+        )"
         exit 1
       shell: bash
