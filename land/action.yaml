@@ -25,30 +25,30 @@ runs:
   using: composite
   steps:
     - env:
-        PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
-        REGISTRY: ${{ inputs.registry }}
+        INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
+        INPUT_REGISTRY: ${{ inputs.registry }}
       if: inputs.method == 'ghstack'
-      run: nix run "$REGISTRY#ghstack" -- land "$PULL_REQUEST_URL"
+      run: nix run "$INPUT_REGISTRY#ghstack" -- land "$INPUT_PULL_REQUEST_URL"
       shell: bash
     - env:
-        BASE: ${{ inputs.base }}
         GH_TOKEN: ${{ inputs.github-token }}
-        PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
-        REGISTRY: ${{ inputs.registry }}
+        INPUT_BASE: ${{ inputs.base }}
+        INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
+        INPUT_REGISTRY: ${{ inputs.registry }}
       if: inputs.method == 'sapling-pull-request'
       run: |
-        nix run "$REGISTRY#sapling" -- rebase --dest "$BASE"
-        nix run "$REGISTRY#sapling" -- push --to "$BASE"
-        DELETE_BRANCH=$(gh pr view "$PULL_REQUEST_URL" --json headRefName -q .headRefName)
-        nix run "$REGISTRY#sapling" -- push --delete "$DELETE_BRANCH"
+        nix run "$INPUT_REGISTRY#sapling" -- rebase --dest "$INPUT_BASE"
+        nix run "$INPUT_REGISTRY#sapling" -- push --to "$INPUT_BASE"
+        DELETE_BRANCH=$(gh pr view "$INPUT_PULL_REQUEST_URL" --json headRefName -q .headRefName)
+        nix run "$INPUT_REGISTRY#sapling" -- push --delete "$DELETE_BRANCH"
       shell: bash
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
-        PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
+        INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
       if: inputs.method == 'github-pull-request'
       run: |
         gh pr merge \
           --rebase \
           --delete-branch \
-          "$PULL_REQUEST_URL"
+          "$INPUT_PULL_REQUEST_URL"
       shell: bash

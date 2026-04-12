@@ -13,7 +13,7 @@ runs:
   using: composite
   steps:
     - env:
-        SYSTEMS: ${{ inputs.systems }}
+        INPUT_SYSTEMS: ${{ inputs.systems }}
       id: matrix
       run: |
         JSON="$(nix flake show --json --all-systems --accept-flake-config --no-pure-eval)"
@@ -21,7 +21,7 @@ runs:
           jq -c '
             .checks as $root
             | ($root | keys) as $available
-            | (env.SYSTEMS | fromjson) as $systems
+            | (env.INPUT_SYSTEMS | fromjson) as $systems
             | ($systems | to_entries)
             | map(. as $pair
                   | ($pair.value
