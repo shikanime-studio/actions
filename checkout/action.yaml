@@ -60,7 +60,6 @@ runs:
     - uses: actions/checkout@v6
       with:
         fetch-depth: 0
-        persist-credentials: false
         token: ${{ inputs.github-token }}
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
@@ -163,44 +162,14 @@ runs:
       if: inputs.pull-request-url != '' && steps.stack.outputs.method == 'github-pull-request'
       run: gh pr checkout "$PULL_REQUEST_URL"
       shell: bash
-    - env:
-        GPG_PASSPHRASE: ${{ inputs.gpg-passphrase }}
-        GPG_PRIVATE_KEY: ${{ inputs.gpg-private-key }}
-      id: gpg
+    - id: gpg
       if: ${{ inputs.sign-commits == 'true' }}
-      run: |
-        KEY_FILE="$(mktemp)"
-        cat <<'EOF' > "$KEY_FILE"
-        $GPG_PRIVATE_KEY
-        EOF
-
-        if [[ -n "$GPG_PASSPHRASE" ]]; then
-          gpg --batch --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" --import "$KEY_FILE"
-        else
-          gpg --batch --import "$KEY_FILE"
-        fi
-
-        KEY_ID="$(gpg --show-keys --with-colons "$KEY_FILE" | awk -F: '$1 == "sec" {print $5; exit}')"
-        echo "keyid=$KEY_ID" >> "$GITHUB_OUTPUT"
-
-        git config --global user.signingkey "$KEY_ID"
-        git config --global commit.gpgsign true
-
-        if [[ -n "$GPG_PASSPHRASE" ]]; then
-          mkdir -p ~/.gnupg
-          chmod 700 ~/.gnupg
-          echo "pinentry-mode loopback" >> ~/.gnupg/gpg.conf
-          echo "allow-loopback-pinentry" >> ~/.gnupg/gpg-agent.conf
-          echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
-
-          KEYGRIP="$(gpg --with-colons --with-keygrip --list-secret-keys "$KEY_ID" | awk -F: '$1 == "grp" {print $10; exit}')"
-          gpg-connect-agent reloadagent /bye
-
-          echo "$GPG_PASSPHRASE" | /usr/lib/gnupg/gpg-preset-passphrase --preset "$KEYGRIP"
-        fi
-
-        rm -f "$KEY_FILE"
-      shell: bash
+      uses: crazy-max/ghaction-import-gpg@v7
+      with:
+        git_commit_gpgsign: true
+        git_user_signingkey: true
+        gpg_private_key: ${{ inputs.gpg-private-key }}
+        passphrase: ${{ inputs.gpg-passphrase }}
     - env:
         REGISTRY: ${{ inputs.registry }}
         KEY_ID: ${{ steps.gpg.outputs.keyid }}
