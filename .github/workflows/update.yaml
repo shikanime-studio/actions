@@ -12,7 +12,6 @@ jobs:
           client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
           permission-contents: write
           permission-pull-requests: write
-          permission-workflows: write
           private-key: ${{ secrets.OPERATOR_PRIVATE_KEY }}
       - uses: shikanime-studio/actions/nix/setup@v9
         with:
