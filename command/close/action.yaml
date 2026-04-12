@@ -45,20 +45,21 @@ runs:
         pull-request-url: ${{ inputs.pull-request-url }}
         registry: ${{ inputs.registry }}
         username: ${{ inputs.username }}
-    - id: close
+    - continue-on-error: true
+      id: close
       if: steps.command.outputs.continue == 'true'
-      continue-on-error: true
       uses: shikanime-studio/actions/close@v9
       with:
         github-token: ${{ inputs.github-token }}
         method: ${{ steps.checkout.outputs.method }}
         pull-request-url: ${{ inputs.pull-request-url }}
         registry: ${{ inputs.registry }}
-    - if: steps.close.outcome == 'failure'
-      env:
+    - env:
         GH_TOKEN: ${{ inputs.github-token }}
+        PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
+      if: steps.close.outcome == 'failure'
       run: |
-        PR_URL="${{ inputs.pull-request-url }}"
+        PR_URL="$PULL_REQUEST_URL"
 
         IFS=' ' read -r SCHEME HOST OWNER REPO <<<"$(
           jq -Rr 'capture("^(?<scheme>https?)://(?<host>[^/]+)/(?<owner>[^/]+)/(?<repo>[^/]+)/pull/(?<number>[0-9]+)") | "\(.scheme) \(.host) \(.owner) \(.repo)"' \

@@ -23,10 +23,10 @@ outputs:
 runs:
   using: composite
   steps:
-    - id: matrix
-      env:
+    - env:
         EXCLUDES: ${{ inputs.excludes }}
         SYSTEMS: ${{ inputs.systems }}
+      id: matrix
       run: |
         JSON="$(nix flake show --json --all-systems --accept-flake-config --no-pure-eval)"
         MATRIX="$(

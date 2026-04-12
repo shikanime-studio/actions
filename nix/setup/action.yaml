@@ -28,15 +28,14 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: docker/setup-qemu-action@v4
-      if: ${{ inputs.extra-platforms != '' }}
+    - if: ${{ inputs.extra-platforms != '' }}
+      uses: docker/setup-qemu-action@v4
       with:
         platforms: ${{ inputs.extra-platforms }}
-    - id: extra-platforms-config
-      if: ${{ inputs.extra-platforms != '' }}
-      env:
+    - env:
         EXTRA_PLATFORMS: ${{ inputs.extra-platforms }}
-      shell: bash
+      id: extra-platforms-config
+      if: ${{ inputs.extra-platforms != '' }}
       run: |
         NIX_PLATFORMS=""
 
@@ -49,21 +48,22 @@ runs:
 
           case "$p" in
             amd64)
-              NIX_PLATFORMS="${NIX_PLATFORMS} x86_64-linux"
+              NIX_PLATFORMS="$NIX_PLATFORMS x86_64-linux"
               ;;
             arm64)
-              NIX_PLATFORMS="${NIX_PLATFORMS} aarch64-linux"
+              NIX_PLATFORMS="$NIX_PLATFORMS aarch64-linux"
               ;;
             *)
-              echo "::warning::unsupported platform: ${p}"
+              echo "::warning::unsupported platform: $p"
               ;;
           esac
         done
 
         NIX_PLATFORMS="$(echo "$NIX_PLATFORMS" | xargs)"
         if [[ -n "$NIX_PLATFORMS" ]]; then
-          echo "nix-config=extra-platforms = ${NIX_PLATFORMS}" >> "$GITHUB_OUTPUT"
+          echo "nix-config=extra-platforms = $NIX_PLATFORMS" >> "$GITHUB_OUTPUT"
         fi
+      shell: bash
     - uses: cachix/install-nix-action@v31
       with:
         extra_nix_config: |
