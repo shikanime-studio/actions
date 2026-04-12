@@ -176,13 +176,7 @@ runs:
           KEYGRIP="$(gpg --with-colons --with-keygrip --list-secret-keys "$KEY_ID" | awk -F: '$1 == "grp" {print $10; exit}')"
           gpg-connect-agent reloadagent /bye
 
-          if command -v gpg-preset-passphrase >/dev/null 2>&1; then
-            echo "${{ inputs.gpg-passphrase }}" | gpg-preset-passphrase --preset "$KEYGRIP"
-          elif [[ -x /usr/lib/gnupg/gpg-preset-passphrase ]]; then
-            echo "${{ inputs.gpg-passphrase }}" | /usr/lib/gnupg/gpg-preset-passphrase --preset "$KEYGRIP"
-          elif [[ -x /usr/libexec/gpg-preset-passphrase ]]; then
-            echo "${{ inputs.gpg-passphrase }}" | /usr/libexec/gpg-preset-passphrase --preset "$KEYGRIP"
-          fi
+          echo "${{ inputs.gpg-passphrase }}" | /usr/lib/gnupg/gpg-preset-passphrase --preset "$KEYGRIP"
         fi
 
         rm -f "$KEY_FILE"
