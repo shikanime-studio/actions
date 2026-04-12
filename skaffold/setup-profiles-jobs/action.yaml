@@ -16,10 +16,10 @@ runs:
   using: composite
   steps:
     - env:
-        INPUT_PATH: ${{ inputs.path }}
+        __PATH: ${{ inputs.path }}
       id: matrix
       run: |
-        FILE="$INPUT_PATH/skaffold.yaml"
+        FILE="$__PATH/skaffold.yaml"
         MATRIX="$(yq -o=json -I=0 '.profiles // [] | map({"name": .name})' "$FILE")"
         echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
         continue=$([ "$MATRIX" = "[]" ] && echo "false" || echo "true")
