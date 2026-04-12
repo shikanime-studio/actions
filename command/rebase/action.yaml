@@ -101,8 +101,7 @@ runs:
 
         RUN_URL="$SCHEME://$HOST/$OWNER/$REPO/actions/runs/${{ github.run_id }}"
 
-        gh pr comment "$PR_URL" --body "$(
-          cat <<EOF
+        BODY="$(cat <<EOF
         ### ⚠️ Cannot proceed with operation
 
         - logs: $RUN_URL
@@ -110,5 +109,7 @@ runs:
         > Rebase failed
         EOF
         )"
+
+        gh pr comment "$PR_URL" --body "$BODY"
         exit 1
       shell: bash
