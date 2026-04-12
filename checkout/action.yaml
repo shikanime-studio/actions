@@ -203,16 +203,16 @@ runs:
       shell: bash
     - env:
         REGISTRY: ${{ inputs.registry }}
-        KEYID: ${{ steps.gpg.outputs.keyid }}
+        KEY_ID: ${{ steps.gpg.outputs.keyid }}
       if: ${{ steps.stack.outputs.method == 'sapling-pull-request' && inputs.sign-commits == 'true' }}
       run: |
         nix run "$REGISTRY#sapling" -- config \
-          --local gpg.key "$KEYID" \
+          --local gpg.key "$KEY_ID" \
           --local commit.gpgsign true
       shell: bash
     - env:
         REGISTRY: ${{ inputs.registry }}
-        KEYID: ${{ steps.gpg.outputs.keyid }}
+        KEY_ID: ${{ steps.gpg.outputs.keyid }}
       if: ${{ steps.stack.outputs.method == 'github-pull-request' && inputs.sign-commits == 'true' }}
       run: |
         nix run "$REGISTRY#jujutsu" -- config set \
@@ -220,5 +220,5 @@ runs:
         nix run "$REGISTRY#jujutsu" -- config set \
           --repo signing.sign-all true
         nix run "$REGISTRY#jujutsu" -- config set \
-          --repo signing.key "$KEYID"
+          --repo signing.key "$KEY_ID"
       shell: bash
