@@ -33,13 +33,13 @@ runs:
       with:
         platforms: ${{ inputs.extra-platforms }}
     - env:
-        EXTRA_PLATFORMS: ${{ inputs.extra-platforms }}
+        INPUT_EXTRA_PLATFORMS: ${{ inputs.extra-platforms }}
       id: extra-platforms-config
       if: ${{ inputs.extra-platforms != '' }}
       run: |
         NIX_PLATFORMS=""
 
-        IFS=',' read -ra parts <<<"$EXTRA_PLATFORMS"
+        IFS=',' read -ra parts <<<"$INPUT_EXTRA_PLATFORMS"
         for part in "${parts[@]}"; do
           p="$(echo "$part" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
           if [ -z "$p" ]; then

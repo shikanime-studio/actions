@@ -22,16 +22,16 @@ runs:
         pull-request-url: ${{ inputs.pull-request-url }}
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
-        HEAD_REF: ${{ inputs.head-ref }}
+        INPUT_HEAD_REF: ${{ inputs.head-ref }}
       if: ${{ steps.checkout.outputs.method == 'github-pull-request' }}
-      run: git push origin --delete "$HEAD_REF" || true
+      run: git push origin --delete "$INPUT_HEAD_REF" || true
       shell: bash
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
-        HEAD_REF: ${{ inputs.head-ref }}
+        INPUT_HEAD_REF: ${{ inputs.head-ref }}
       if: ${{ steps.checkout.outputs.method == 'ghstack' }}
       run: |
-        PREFIX="$(printf '%s' "$HEAD_REF" | sed 's#/head$##')"
+        PREFIX="$(printf '%s' "$INPUT_HEAD_REF" | sed 's#/head$##')"
 
         for role in base head orig; do
           git push origin --delete "$PREFIX/$role" || true
