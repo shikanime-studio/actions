@@ -78,7 +78,9 @@ runs:
         registry: ${{ inputs.registry }}
         sign-commits: ${{ inputs.sign-commits }}
         username: ${{ inputs.username }}
-    - if: steps.command.outputs.continue == 'true'
+    - id: rebase
+      if: steps.command.outputs.continue == 'true'
+      continue-on-error: true
       uses: shikanime-studio/actions/rebase@v9
       with:
         base: ${{ inputs.base }}
@@ -86,3 +88,18 @@ runs:
         method: ${{ steps.checkout.outputs.method }}
         pull-request-url: ${{ inputs.pull-request-url }}
         registry: ${{ inputs.registry }}
+    - if: steps.rebase.outcome == 'failure'
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+      run: |
+        PR_URL="${{ inputs.pull-request-url }}"
+
+        IFS=' ' read -r SCHEME HOST OWNER REPO <<<"$(
+          jq -Rr 'capture("^(?<scheme>https?)://(?<host>[^/]+)/(?<owner>[^/]+)/(?<repo>[^/]+)/pull/(?<number>[0-9]+)") | "\(.scheme) \(.host) \(.owner) \(.repo)"' \
+            <<<"$PR_URL"
+        )"
+
+        RUN_URL="$SCHEME://$HOST/$OWNER/$REPO/actions/runs/${{ github.run_id }}"
+        gh pr comment "$PR_URL" --body "Rebase failed. Logs: $RUN_URL"
+        exit 1
+      shell: bash

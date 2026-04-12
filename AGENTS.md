@@ -8,8 +8,8 @@ then trigger via PR comments.
 
 - Prefer composite `run:` steps in Bash over `actions/github-script` unless
   JavaScript is required.
-- Pass action inputs into scripts via `env:` instead of embedding `${{ ... }}`
-  inside the script body.
+- Template `${{ ... }}` directly inside `run:` scripts; only use `env:` when a
+  value is actually needed as an environment variable.
 - Avoid "alias" variables that just mirror inputs (e.g. `REGISTRY=...` then
   `nix run "$REGISTRY#..."`); template `${{ inputs.* }}` directly in commands.
 - Prefer step-level `env:` for tokens/CLI auth variables (e.g. `GH_TOKEN`,
