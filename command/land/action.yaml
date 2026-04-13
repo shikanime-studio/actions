@@ -52,6 +52,15 @@ inputs:
 runs:
   using: composite
   steps:
+    - id: yolo
+      uses: github/command@v2
+      with:
+        allowed_contexts: pull_request
+        command: .yolo
+        github_token: ${{ inputs.github-token }}
+        permissions: ${{ inputs.permissions }}
+        reaction: ${{ inputs.reaction }}
+        skip_ci: true
     - id: command
       uses: github/command@v2
       with:
@@ -61,7 +70,7 @@ runs:
         permissions: ${{ inputs.permissions }}
         reaction: ${{ inputs.reaction }}
     - id: checkout
-      if: steps.command.outputs.continue == 'true'
+      if: steps.command.outputs.continue == 'true' || steps.yolo.outputs.continue == 'true'
       uses: shikanime-studio/actions/checkout@v9
       with:
         email: ${{ inputs.email }}
@@ -75,7 +84,7 @@ runs:
         username: ${{ inputs.username }}
     - continue-on-error: true
       id: land
-      if: steps.command.outputs.continue == 'true'
+      if: steps.command.outputs.continue == 'true' || steps.yolo.outputs.continue == 'true'
       uses: shikanime-studio/actions/land@v9
       with:
         base: ${{ inputs.base }}
