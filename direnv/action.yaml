@@ -16,21 +16,32 @@ outputs:
 runs:
   using: composite
   steps:
-    - env:
+    - id: nix-direnv
+      env:
         INPUT_REGISTRY: ${{ inputs.registry }}
-      run: nix run "$INPUT_REGISTRY#direnv" -- allow .
+      run: |
+        DIRENV_CONFIG="$(mktemp -d)"
+        NIX_DIRENV="$(nix build "$INPUT_REGISTRY#nix-direnv" --no-link --print-out-paths)"
+        echo "source \"$NIX_DIRENV/share/nix-direnv/direnvrc\"" > "$DIRENV_CONFIG/direnvrc"
+        echo "direnv_config=$DIRENV_CONFIG" >> "$GITHUB_OUTPUT"
       shell: bash
-      working-directory: ${{ inputs.path }}
+    - env:
+        DIRENV_CONFIG: ${{ steps.nix-direnv.outputs.direnv_config }}
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_REGISTRY: ${{ inputs.registry }}
+      run: nix run "$INPUT_REGISTRY#direnv" -- allow "$INPUT_PATH"
+      shell: bash
     - env:
         DIRENV_WARN_TIMEOUT: "0"
+        DIRENV_CONFIG: ${{ steps.nix-direnv.outputs.direnv_config }}
+        INPUT_PATH: ${{ inputs.path }}
         INPUT_REGISTRY: ${{ inputs.registry }}
       id: export
       run: |
-        ENV="$(nix run "$INPUT_REGISTRY#direnv" -- export json)"
+        ENV="$(cd "$INPUT_PATH" && nix run "$INPUT_REGISTRY#direnv" -- export json)"
         {
           echo 'env<<EOF'
           echo "$ENV"
           echo 'EOF'
         } >> "$GITHUB_OUTPUT"
       shell: bash
-      working-directory: ${{ inputs.path }}
