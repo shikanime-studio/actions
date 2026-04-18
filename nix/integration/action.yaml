@@ -83,21 +83,18 @@ runs:
           exit 1
         fi
 
-        for src in "${matches[@]}"; do
-          base="$(basename "$src")"
-          dest="$artifact_dir/$base"
-          if [ -e "$dest" ]; then
-            i=1
-            while [ -e "$artifact_dir/$i-$base" ]; do
-              i=$((i + 1))
-            done
-            dest="$artifact_dir/$i-$base"
-          fi
+        if [ ${#matches[@]} -ne 1 ]; then
+          echo "::error::NixOS image detected but expected exactly 1 artifact file under ./result, found ${#matches[@]}"
+          printf '%s\n' "${matches[@]}" >&2
+          exit 1
+        fi
 
-          cp -L "$src" "$dest"
-        done
+        src="${matches[0]}"
+        base="$(basename "$src")"
+        dest="$artifact_dir/$base"
+        cp -L "$src" "$dest"
 
-        echo "path=$artifact_dir" >> "$GITHUB_OUTPUT"
+        echo "path=$dest" >> "$GITHUB_OUTPUT"
       shell: bash
     - if: >-
         ${{ steps.nixos.outputs.found == 'true' }}
