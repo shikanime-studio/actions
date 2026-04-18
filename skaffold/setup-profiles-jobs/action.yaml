@@ -20,6 +20,10 @@ runs:
       id: matrix
       run: |
         FILE="$INPUT_PATH/skaffold.yaml"
+        if [ ! -f "$FILE" ]; then
+          echo "::error::skaffold.yaml not found at: $FILE"
+          exit 1
+        fi
         MATRIX="$(yq -o=json -I=0 '.profiles // [] | map({"name": .name})' "$FILE")"
         echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
         continue=$([ "$MATRIX" = "[]" ] && echo "false" || echo "true")

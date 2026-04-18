@@ -36,11 +36,20 @@ runs:
         INPUT_NAME: ${{ inputs.name }}
         INPUT_SYSTEM: ${{ inputs.system }}
       run: |
+        SYSTEM="$INPUT_SYSTEM"
+        if [ -z "$SYSTEM" ]; then
+          SYSTEM="$(nix eval --raw --impure --expr builtins.currentSystem)"
+        fi
+        if [ -z "$SYSTEM" ]; then
+          echo "::error::Unable to determine Nix system (inputs.system empty and builtins.currentSystem returned empty)"
+          exit 1
+        fi
+
         JSON="$(nix flake show --json --all-systems --accept-flake-config --no-pure-eval)"
 
         FOUND="$(
           jq -r \
-            --arg system "$INPUT_SYSTEM" \
+            --arg system "$SYSTEM" \
             --arg name "$INPUT_NAME" \
             '
               (.packages[$system] // {})
@@ -56,9 +65,9 @@ runs:
     - id: artifact
       if: ${{ steps.nixos.outputs.found == 'true' }}
       run: |
-        matches=()
+        MATCHES=()
         while IFS= read -r -d '' file; do
-          matches+=("$file")
+          MATCHES+=("$file")
         done < <(
           find -L result -type f \( \
             -name '*.iso' -o \
@@ -76,18 +85,18 @@ runs:
           \) -print0
         )
 
-        if [ ${#matches[@]} -eq 0 ]; then
+        if [ ${#MATCHES[@]} -eq 0 ]; then
           echo "::error::NixOS image detected but no image artifacts found under ./result"
           exit 1
         fi
 
-        if [ ${#matches[@]} -ne 1 ]; then
-          echo "::error::NixOS image detected but expected exactly 1 artifact file under ./result, found ${#matches[@]}"
-          printf '%s\n' "${matches[@]}" >&2
+        if [ ${#MATCHES[@]} -ne 1 ]; then
+          echo "::error::NixOS image detected but expected exactly 1 artifact file under ./result, found ${#MATCHES[@]}"
+          printf '%s\n' "${MATCHES[@]}" >&2
           exit 1
         fi
 
-        src="${matches[0]}"
+        src="${MATCHES[0]}"
         echo "path=$src" >> "$GITHUB_OUTPUT"
       shell: bash
     - if: >-
