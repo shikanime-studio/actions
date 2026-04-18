@@ -34,9 +34,8 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
         INPUT_REF: ${{ inputs.ref }}
         INPUT_REPO: ${{ inputs.repo }}
-        ARTIFACTS_PATH: artifacts
       run: |
         while IFS= read -r -d '' file; do
           gh release upload "$INPUT_REF" "$file" --repo "$INPUT_REPO" --clobber
-        done < <(find "$ARTIFACTS_PATH" -type f -print0)
+        done < <(find artifacts -type f -print0)
       shell: bash
