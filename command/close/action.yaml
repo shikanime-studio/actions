@@ -1,3 +1,4 @@
+---
 name: Close Command
 description: Close pull request on a pull request head ref
 inputs:
@@ -45,8 +46,8 @@ runs:
         pull-request-url: ${{ inputs.pull-request-url }}
         registry: ${{ inputs.registry }}
         username: ${{ inputs.username }}
-    - continue-on-error: true
-      id: close
+    - id: close
+      continue-on-error: true
       if: steps.command.outputs.continue == 'true'
       uses: shikanime-studio/actions/close@v9
       with:

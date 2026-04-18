@@ -1,3 +1,4 @@
+---
 name: Skaffold Integration
 description: Run Skaffold build and render, optionally with a profile
 inputs:
@@ -21,10 +22,7 @@ runs:
         SKAFFOLD_PLATFORM="$(printf '%s' "$INPUT_PLATFORMS" | jq -r 'join(",")')"
         echo "platform=$SKAFFOLD_PLATFORM" >> "$GITHUB_OUTPUT"
       shell: bash
-    - env:
-        SKAFFOLD_PLATFORM: ${{ steps.skaffold.outputs.platform }}
-        SKAFFOLD_PROFILE: ${{ inputs.profile }}
-      id: skaffold
+    - id: skaffold
       run: |
         skaffold config set --global collect-metrics false
         skaffold build "${args[@]}"
@@ -35,3 +33,6 @@ runs:
           echo 'EOF'
         } >> "$GITHUB_OUTPUT"
       shell: bash
+      env:
+        SKAFFOLD_PLATFORM: ${{ steps.skaffold.outputs.platform }}
+        SKAFFOLD_PROFILE: ${{ inputs.profile }}

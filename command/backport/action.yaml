@@ -1,3 +1,4 @@
+---
 name: Backport Command
 description: Backport pull request on a pull request head ref
 inputs:
@@ -60,8 +61,8 @@ runs:
         registry: ${{ inputs.registry }}
         sign-commits: ${{ inputs.sign-commits }}
         username: ${{ inputs.username }}
-    - continue-on-error: true
-      id: backport
+    - id: backport
+      continue-on-error: true
       if: steps.command.outputs.continue == 'true'
       uses: shikanime-studio/actions/backport@v9
       with:

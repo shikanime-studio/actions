@@ -1,3 +1,4 @@
+---
 name: Run Command
 description: Trigger a workflow dispatch on a pull request head ref
 inputs:

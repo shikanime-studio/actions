@@ -1,8 +1,8 @@
 # Agents
 
-This repository provides comment-driven agents (composite actions) that
-automate common PR operations. Add them to workflows as shown in README,
-then trigger via PR comments.
+This repository provides comment-driven agents (composite actions) that automate
+common PR operations. Add them to workflows as shown in README, then trigger via
+PR comments.
 
 ## Coding Style
 
@@ -20,8 +20,8 @@ then trigger via PR comments.
 - Keep command actions thin: orchestrate stack/config/checkout and delegate
   behavior to the underlying action.
 - In consumer workflows, reference published actions as
-  `shikanime-studio/actions/xxx@vX`
-  instead of `./xxx` (use `./xxx` only for in-repo development/testing).
+  `shikanime-studio/actions/xxx@vX` instead of `./xxx` (use `./xxx` only for
+  in-repo development/testing).
 - Centralize method-aware git operations to avoid copy-paste drift across
   actions.
 - Avoid unused inputs and redundant steps; remove them when refactoring.
@@ -33,8 +33,8 @@ then trigger via PR comments.
 ## Comment Commands
 
 - .land
-  - Lands the current PR using the publication method determined from the
-    stack or an explicit param.
+  - Lands the current PR using the publication method determined from the stack
+    or an explicit param.
   - Usage: `.land` or `.land | ghstack|slpr|ghpr`
   - Permissions: contents: write, issues: write, pull-requests: write
   - Action: `shikanime-studio/actions/command/land`
@@ -46,15 +46,15 @@ then trigger via PR comments.
   - Action: `shikanime-studio/actions/command/rebase`
 
 - .close
-  - Closes the current PR and optionally cleans up remote branches,
-    depending on stack method.
+  - Closes the current PR and optionally cleans up remote branches, depending on
+    stack method.
   - Usage: `.close`
   - Permissions: pull-requests: write, contents: write, issues: write
   - Action: `shikanime-studio/actions/command/close`
 
 - .backport
-  - Backports the current PR onto a target branch. Supports ghstack,
-    sapling PRs, and GitHub PRs.
+  - Backports the current PR onto a target branch. Supports ghstack, sapling
+    PRs, and GitHub PRs.
   - Usage: `.backport | <target-branch>`
   - Permissions: contents: write, pull-requests: write, issues: write
   - Action: `shikanime-studio/actions/command/backport`
@@ -62,16 +62,16 @@ then trigger via PR comments.
 - .run
   - Triggers a workflow dispatch on the same repository using GitHub CLI.
   - Usage: `.run | <workflow-name-or-path>`
-  - Notes: The target workflow must have `workflow_dispatch` enabled.
-    Runs against the PR head ref.
+  - Notes: The target workflow must have `workflow_dispatch` enabled. Runs
+    against the PR head ref.
   - Permissions: actions: write (plus minimal read on contents/PRs)
   - Action: `shikanime-studio/actions/command/run`
 
 ## Non-Comment Workflows
 
 - update
-  - Updates flake inputs and publishes via ghstack/sapling/GitHub PR,
-    depending on configuration.
+  - Updates flake inputs and publishes via ghstack/sapling/GitHub PR, depending
+    on configuration.
   - Typical usage: scheduled or manual workflow with `workflow_dispatch`.
   - Action: `shikanime-studio/actions/update`
 
@@ -97,5 +97,5 @@ then trigger via PR comments.
 
 - nix/setup-packages-jobs
   - Produces a matrix of `{ system, runner, name }` for package builds.
-  - Inputs: `systems` as above; `excludes` JSON array of package names
-    (defaults include `devenv-up`, `devenv-test`).
+  - Inputs: `systems` as above; `excludes` JSON array of package names (defaults
+    include `devenv-up`, `devenv-test`).

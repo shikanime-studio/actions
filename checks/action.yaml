@@ -1,5 +1,8 @@
+---
 name: Checks
-description: Verify a pull request is landable (open, not draft, not merged) and all checks have passed
+description:
+  Verify a pull request is landable (open, not draft, not merged) and all checks
+  have passed
 inputs:
   github-token:
     default: ${{ github.token }}
