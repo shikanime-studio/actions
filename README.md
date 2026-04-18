@@ -18,8 +18,8 @@ App token, configure repository permissions accordingly:
 - Cleanup: contents: write
 
 Permissions can be configured at the workflow level or per job. The examples
-below set them at the workflow level and request matching scopes from the
-GitHub App via actions/create-github-app-token.
+below set them at the workflow level and request matching scopes from the GitHub
+App via actions/create-github-app-token.
 
 ## Workflow Configuration
 
@@ -29,7 +29,7 @@ the current setup used in `.github/workflows/commands.yaml`:
 
 ```yaml
 name: Command
-'on':
+"on":
   issue_comment:
     types:
       - created
@@ -235,10 +235,9 @@ jobs:
         include: >-
           ${{ fromJSON(needs.setup-checks-jobs.outputs.matrix) }}
     steps:
-      - run: nix flake check \
-          --accept-flake-config \
-          --no-pure-eval \
-          --system "${{ matrix.system }}"
+      - run:
+          nix flake check \ --accept-flake-config \ --no-pure-eval \ --system
+          "${{ matrix.system }}"
 
   setup-packages-jobs:
     runs-on: ubuntu-latest
@@ -266,10 +265,9 @@ jobs:
         include: >-
           ${{ fromJSON(needs.setup-packages-jobs.outputs.matrix) }}
     steps:
-      - run: nix build \
-          --accept-flake-config \
-          --no-pure-eval \
-          ".#packages.${{ matrix.system }}.${{ matrix.name }}"
+      - run:
+          nix build \ --accept-flake-config \ --no-pure-eval \ ".#packages.${{
+          matrix.system }}.${{ matrix.name }}"
 ```
 
 ## Run Workflow
@@ -284,30 +282,30 @@ Trigger a workflow dispatch from a PR comment:
 Example job:
 
 ```yaml
-  run:
-    if: >-
-      github.event.issue.pull_request != null &&
-      contains(github.event.comment.body, '.run')
-    permissions:
-      actions: write
-      issues: write
-      pull-requests: read
-    runs-on: ubuntu-slim
-    steps:
-      - continue-on-error: true
-        id: createGithubAppToken
-        uses: actions/create-github-app-token@v3.1.1
-        with:
-          client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
-          permission-actions: write
-          permission-issues: write
-          permission-pull-requests: read
-          private-key: ${{ secrets.OPERATOR_PRIVATE_KEY }}
-      - uses: shikanime-studio/actions/command/run@main
-        with:
-          github-token: >-
-            ${{ steps.createGithubAppToken.outputs.token
-                || secrets.GITHUB_TOKEN }}
+run:
+  if: >-
+    github.event.issue.pull_request != null &&
+    contains(github.event.comment.body, '.run')
+  permissions:
+    actions: write
+    issues: write
+    pull-requests: read
+  runs-on: ubuntu-slim
+  steps:
+    - continue-on-error: true
+      id: createGithubAppToken
+      uses: actions/create-github-app-token@v3.1.1
+      with:
+        client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
+        permission-actions: write
+        permission-issues: write
+        permission-pull-requests: read
+        private-key: ${{ secrets.OPERATOR_PRIVATE_KEY }}
+    - uses: shikanime-studio/actions/command/run@main
+      with:
+        github-token: >-
+          ${{ steps.createGithubAppToken.outputs.token
+              || secrets.GITHUB_TOKEN }}
 ```
 
 To automate dependency updates and repository hygiene, you can also add a
@@ -315,7 +313,7 @@ scheduled workflow for updates that uses the `update` action:
 
 ```yaml
 name: Update
-'on':
+"on":
   schedule:
     - cron: 0 4 * * 0
   workflow_dispatch:
@@ -374,7 +372,7 @@ cleanup workflow to `.github/workflows/cleanup.yaml`:
 
 ```yaml
 name: Cleanup
-'on':
+"on":
   pull_request:
     types:
       - closed

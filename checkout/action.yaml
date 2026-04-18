@@ -1,3 +1,4 @@
+---
 name: Checkout
 description: Checkout repository with method-appropriate defaults
 inputs:
@@ -43,13 +44,17 @@ inputs:
     required: false
 outputs:
   base-ref:
-    description: The base ref name of the pull request (when pull-request-url is set)
+    description:
+      The base ref name of the pull request (when pull-request-url is set)
     value: ${{ steps.stack.outputs.base-ref }}
   head-ref:
-    description: The head ref name of the pull request (when pull-request-url is set)
+    description:
+      The head ref name of the pull request (when pull-request-url is set)
     value: ${{ steps.stack.outputs.head-ref }}
   method:
-    description: The resolved method used to create the pull request (ghstack, sapling-pull-request, github-pull-request)
+    description:
+      The resolved method used to create the pull request (ghstack,
+      sapling-pull-request, github-pull-request)
     value: ${{ steps.stack.outputs.method }}
   parent-pull-request-url:
     description: The parent pull request URL if part of a stack (when available)
@@ -61,10 +66,7 @@ runs:
       with:
         fetch-depth: 0
         token: ${{ inputs.github-token }}
-    - env:
-        GH_TOKEN: ${{ inputs.github-token }}
-        INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
-      id: stack
+    - id: stack
       run: |
         if [[ -z "$INPUT_PULL_REQUEST_URL" ]]; then
           echo "method=github-pull-request" >> "$GITHUB_OUTPUT"
@@ -116,6 +118,9 @@ runs:
           echo "parent-pull-request-url=" >> "$GITHUB_OUTPUT"
         fi
       shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
     - env:
         INPUT_EMAIL: ${{ inputs.email }}
         INPUT_FULLNAME: ${{ inputs.fullname }}
@@ -143,14 +148,17 @@ runs:
     - env:
         INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
         INPUT_REGISTRY: ${{ inputs.registry }}
-      if: inputs.pull-request-url != '' && steps.stack.outputs.method == 'ghstack'
+      if:
+        inputs.pull-request-url != '' && steps.stack.outputs.method == 'ghstack'
       run: |
         nix run "$INPUT_REGISTRY#ghstack" -- checkout "$INPUT_PULL_REQUEST_URL"
       shell: bash
     - env:
         INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
         INPUT_REGISTRY: ${{ inputs.registry }}
-      if: inputs.pull-request-url != '' && steps.stack.outputs.method == 'sapling-pull-request'
+      if:
+        inputs.pull-request-url != '' && steps.stack.outputs.method ==
+        'sapling-pull-request'
       run: |
         nix run "$INPUT_REGISTRY#sapling" -- pr pull \
           --goto \
@@ -159,7 +167,9 @@ runs:
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
         INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
-      if: inputs.pull-request-url != '' && steps.stack.outputs.method == 'github-pull-request'
+      if:
+        inputs.pull-request-url != '' && steps.stack.outputs.method ==
+        'github-pull-request'
       run: gh pr checkout "$INPUT_PULL_REQUEST_URL"
       shell: bash
     - id: gpg
@@ -173,7 +183,9 @@ runs:
     - env:
         KEY_ID: ${{ steps.gpg.outputs.keyid }}
         INPUT_REGISTRY: ${{ inputs.registry }}
-      if: ${{ steps.stack.outputs.method == 'sapling-pull-request' && inputs.sign-commits == 'true' }}
+      if:
+        ${{ steps.stack.outputs.method == 'sapling-pull-request' &&
+        inputs.sign-commits == 'true' }}
       run: |
         nix run "$INPUT_REGISTRY#sapling" -- config \
           --local gpg.key "$KEY_ID" \
@@ -182,7 +194,9 @@ runs:
     - env:
         KEY_ID: ${{ steps.gpg.outputs.keyid }}
         INPUT_REGISTRY: ${{ inputs.registry }}
-      if: ${{ steps.stack.outputs.method == 'github-pull-request' && inputs.sign-commits == 'true' }}
+      if:
+        ${{ steps.stack.outputs.method == 'github-pull-request' &&
+        inputs.sign-commits == 'true' }}
       run: |
         nix run "$INPUT_REGISTRY#jujutsu" -- config set \
           --repo signing.backend gpg

@@ -1,3 +1,4 @@
+---
 name: Setup Checks Jobs
 description: Generate matrix for Nix checks on Linux systems
 inputs:
@@ -9,12 +10,17 @@ inputs:
       }
     description: Runner to systems mapping
     required: false
+outputs:
+  continue:
+    description: Whether any Linux checks/packages exist
+    value: ${{ steps.matrix.outputs.continue }}
+  matrix:
+    description: JSON array of matrix entries
+    value: ${{ steps.matrix.outputs.matrix }}
 runs:
   using: composite
   steps:
-    - env:
-        INPUT_SYSTEMS: ${{ inputs.systems }}
-      id: matrix
+    - id: matrix
       run: |
         JSON="$(nix flake show --json --all-systems --accept-flake-config --no-pure-eval)"
         MATRIX="$(
@@ -36,10 +42,5 @@ runs:
         continue=$([ "$MATRIX" = "[]" ] && echo "false" || echo "true")
         echo "continue=$continue" >> "$GITHUB_OUTPUT"
       shell: bash
-outputs:
-  continue:
-    description: Whether any Linux checks/packages exist
-    value: ${{ steps.matrix.outputs.continue }}
-  matrix:
-    description: JSON array of matrix entries
-    value: ${{ steps.matrix.outputs.matrix }}
+      env:
+        INPUT_SYSTEMS: ${{ inputs.systems }}

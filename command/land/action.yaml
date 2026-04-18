@@ -1,3 +1,4 @@
+---
 name: Land Command
 description: Land pull request on a pull request head ref
 inputs:
@@ -70,7 +71,9 @@ runs:
         reaction: ${{ inputs.reaction }}
         skip_ci: true
     - id: checkout
-      if: steps.command.outputs.continue == 'true' || steps.command-force.outputs.continue == 'true'
+      if:
+        steps.command.outputs.continue == 'true' ||
+        steps.command-force.outputs.continue == 'true'
       uses: shikanime-studio/actions/checkout@v9
       with:
         email: ${{ inputs.email }}
@@ -82,9 +85,11 @@ runs:
         registry: ${{ inputs.registry }}
         sign-commits: ${{ inputs.sign-commits }}
         username: ${{ inputs.username }}
-    - continue-on-error: true
-      id: land
-      if: steps.command.outputs.continue == 'true' || steps.command-force.outputs.continue == 'true'
+    - id: land
+      continue-on-error: true
+      if:
+        steps.command.outputs.continue == 'true' ||
+        steps.command-force.outputs.continue == 'true'
       uses: shikanime-studio/actions/land@v9
       with:
         base: ${{ inputs.base }}

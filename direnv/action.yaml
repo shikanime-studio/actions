@@ -1,3 +1,4 @@
+---
 name: Setup direnv
 description: Allow .envrc and export its environment to GitHub Actions
 inputs:
@@ -15,40 +16,36 @@ inputs:
     required: false
 outputs:
   env:
-    description: JSON object of environment variables changed by direnv (unset -> null)
+    description:
+      JSON object of environment variables changed by direnv (unset -> null)
     value: ${{ steps.export.outputs.env }}
 runs:
   using: composite
   steps:
     - uses: actions/cache@v5
       with:
+        key: direnv-${{ runner.os }}-${{ inputs.cache-key }}
         path: |
           ${{ inputs.path }}/.direnv
           ~/.cache/direnv
-        key: direnv-${{ runner.os }}-${{ inputs.cache-key }}
         restore-keys: |
           direnv-${{ runner.os }}-
     - id: nix-direnv
-      env:
-        INPUT_REGISTRY: ${{ inputs.registry }}
       run: |
         DIRENV_CONFIG="$(mktemp -d)"
         NIX_DIRENV="$(nix build "$INPUT_REGISTRY#nix-direnv" --no-link --print-out-paths)"
         echo "source \"$NIX_DIRENV/share/nix-direnv/direnvrc\"" > "$DIRENV_CONFIG/direnvrc"
         echo "direnv_config=$DIRENV_CONFIG" >> "$GITHUB_OUTPUT"
       shell: bash
+      env:
+        INPUT_REGISTRY: ${{ inputs.registry }}
     - env:
         DIRENV_CONFIG: ${{ steps.nix-direnv.outputs.direnv_config }}
         INPUT_PATH: ${{ inputs.path }}
         INPUT_REGISTRY: ${{ inputs.registry }}
       run: nix run "$INPUT_REGISTRY#direnv" -- allow "$INPUT_PATH"
       shell: bash
-    - env:
-        DIRENV_WARN_TIMEOUT: "0"
-        DIRENV_CONFIG: ${{ steps.nix-direnv.outputs.direnv_config }}
-        INPUT_PATH: ${{ inputs.path }}
-        INPUT_REGISTRY: ${{ inputs.registry }}
-      id: export
+    - id: export
       run: |
         ENV="$(cd "$INPUT_PATH" && nix run "$INPUT_REGISTRY#direnv" -- export json)"
         {
@@ -57,3 +54,8 @@ runs:
           echo 'EOF'
         } >> "$GITHUB_OUTPUT"
       shell: bash
+      env:
+        DIRENV_WARN_TIMEOUT: "0"
+        DIRENV_CONFIG: ${{ steps.nix-direnv.outputs.direnv_config }}
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_REGISTRY: ${{ inputs.registry }}

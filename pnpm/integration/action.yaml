@@ -1,3 +1,4 @@
+---
 name: JavaScript Integration
 description: Run a list of package manager stages via corepack
 inputs:
