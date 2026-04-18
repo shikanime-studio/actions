@@ -1,0 +1,90 @@
+name: Nix Integration
+description: Build a flake target and upload NixOS image artifacts when present
+inputs:
+  name:
+    description: Package name under packages.<system>.<name> to build
+    required: true
+  system:
+    default: ""
+    description: Nix system (used when building from package name)
+    required: false
+runs:
+  using: composite
+  steps:
+    - env:
+        INPUT_NAME: ${{ inputs.name }}
+        INPUT_SYSTEM: ${{ inputs.system }}
+      id: target
+      run: |
+        system="$INPUT_SYSTEM"
+        if [ -z "$system" ]; then
+          flake_url=".#packages.$INPUT_NAME"
+          name="nixos-image-$INPUT_NAME"
+        else
+          flake_url=".#packages.$system.$INPUT_NAME"
+          name="nixos-image-$system-$INPUT_NAME"
+        fi
+
+        echo "system=$system" >> "$GITHUB_OUTPUT"
+        echo "flake_url=$flake_url" >> "$GITHUB_OUTPUT"
+        echo "name=$name" >> "$GITHUB_OUTPUT"
+      shell: bash
+    - env:
+        INPUT_FLAKE_URL: ${{ steps.target.outputs.flake_url }}
+      run: nix build --accept-flake-config --no-pure-eval "$INPUT_FLAKE_URL"
+      shell: bash
+    - id: detect
+      run: |
+        matches=()
+        while IFS= read -r -d '' file; do
+          matches+=("$file")
+        done < <(
+          find -L result -type f \( \
+            -name '*.iso' -o \
+            -name '*.img' -o \
+            -name '*.img.*' -o \
+            -name '*.qcow2' -o \
+            -name '*.raw' -o \
+            -name '*.vhd' -o \
+            -name '*.vhdx' -o \
+            -name '*.vmdk' -o \
+            -name '*.ova' -o \
+            -name '*.tar.gz' -o \
+            -name '*.tar.xz' -o \
+            -name '*.tar.zst' \
+          \) -print0
+        )
+
+        if [ ${#matches[@]} -eq 0 ]; then
+          echo "found=false" >> "$GITHUB_OUTPUT"
+          echo "dir=" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        artifacts_dir="$(mktemp -d)"
+
+        copied=()
+        for src in "${matches[@]}"; do
+          base="$(basename "$src")"
+          dest="$artifacts_dir/$base"
+          if [ -e "$dest" ]; then
+            i=1
+            while [ -e "$artifacts_dir/$i-$base" ]; do
+              i=$((i + 1))
+            done
+            dest="$artifacts_dir/$i-$base"
+          fi
+
+          cp -a "$src" "$dest"
+          copied+=("$dest")
+        done
+
+        echo "found=true" >> "$GITHUB_OUTPUT"
+        echo "dir=$artifacts_dir" >> "$GITHUB_OUTPUT"
+      shell: bash
+    - if: ${{ steps.detect.outputs.found == 'true' }}
+      uses: actions/upload-artifact@v4
+      with:
+        if-no-files-found: error
+        name: ${{ steps.target.outputs.name }}
+        path: ${{ steps.detect.outputs.dir }}
