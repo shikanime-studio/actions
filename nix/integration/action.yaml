@@ -58,18 +58,49 @@ runs:
       run: |
         artifact_dir="$(mktemp -d)"
 
-        if [ -d result ]; then
-          cp -LR result/. "$artifact_dir/"
-        else
-          cp -L result "$artifact_dir/"
+        matches=()
+        while IFS= read -r -d '' file; do
+          matches+=("$file")
+        done < <(
+          find -L result -type f \( \
+            -name '*.iso' -o \
+            -name '*.img' -o \
+            -name '*.img.*' -o \
+            -name '*.qcow2' -o \
+            -name '*.raw' -o \
+            -name '*.vhd' -o \
+            -name '*.vhdx' -o \
+            -name '*.vmdk' -o \
+            -name '*.ova' -o \
+            -name '*.tar.gz' -o \
+            -name '*.tar.xz' -o \
+            -name '*.tar.zst' \
+          \) -print0
+        )
+
+        if [ ${#matches[@]} -eq 0 ]; then
+          echo "::error::NixOS image detected but no image artifacts found under ./result"
+          exit 1
         fi
 
-        echo "path=$artifact_dir" >> "$GITHUB_OUTPUT"
+        if [ ${#matches[@]} -ne 1 ]; then
+          echo "::error::NixOS image detected but expected exactly 1 artifact file under ./result, found ${#matches[@]}"
+          printf '%s\n' "${matches[@]}" >&2
+          exit 1
+        fi
+
+        src="${matches[0]}"
+        base="$(basename "$src")"
+        dest="$artifact_dir/$base"
+        cp -L "$src" "$dest"
+
+        echo "path=$dest" >> "$GITHUB_OUTPUT"
       shell: bash
     - if: >-
         ${{ steps.nixos.outputs.found == 'true' }}
       uses: actions/upload-artifact@v7
       with:
+        archive: false
         if-no-files-found: error
         name: ${{ steps.target.outputs.name }}
         path: ${{ steps.artifact.outputs.path }}
