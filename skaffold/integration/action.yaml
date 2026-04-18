@@ -18,8 +18,8 @@ runs:
     - env:
         INPUT_PLATFORMS: ${{ inputs.platforms }}
       run: |
-          SKAFFOLD_PLATFORM="$(printf '%s' "$INPUT_PLATFORMS" | jq -r 'join(",")')"
-          echo "platform=$SKAFFOLD_PLATFORM" >> "$GITHUB_OUTPUT"
+        SKAFFOLD_PLATFORM="$(printf '%s' "$INPUT_PLATFORMS" | jq -r 'join(",")')"
+        echo "platform=$SKAFFOLD_PLATFORM" >> "$GITHUB_OUTPUT"
       shell: bash
     - env:
         SKAFFOLD_PLATFORM: ${{ steps.skaffold.outputs.platform }}
@@ -27,8 +27,8 @@ runs:
       id: skaffold
       run: |
         skaffold config set --global collect-metrics false
-        skaffold build "${args[@]}"
-        MANIFEST="$(skaffold render "${args[@]}")"
+        skaffold build
+        MANIFEST="$(skaffold render)"
         {
           echo 'manifest<<EOF'
           echo "$MANIFEST"
