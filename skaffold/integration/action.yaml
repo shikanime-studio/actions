@@ -27,8 +27,8 @@ runs:
       id: skaffold
       run: |
         skaffold config set --global collect-metrics false
-        skaffold build "${args[@]}"
-        MANIFEST="$(skaffold render "${args[@]}")"
+        skaffold build
+        MANIFEST="$(skaffold render)"
         {
           echo 'manifest<<EOF'
           echo "$MANIFEST"
