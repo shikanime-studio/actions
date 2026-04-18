@@ -56,8 +56,6 @@ runs:
     - id: artifact
       if: ${{ steps.nixos.outputs.found == 'true' }}
       run: |
-        artifact_dir="$(mktemp -d)"
-
         matches=()
         while IFS= read -r -d '' file; do
           matches+=("$file")
@@ -90,11 +88,7 @@ runs:
         fi
 
         src="${matches[0]}"
-        base="$(basename "$src")"
-        dest="$artifact_dir/$base"
-        cp -L "$src" "$dest"
-
-        echo "path=$dest" >> "$GITHUB_OUTPUT"
+        echo "path=$src" >> "$GITHUB_OUTPUT"
       shell: bash
     - if: >-
         ${{ steps.nixos.outputs.found == 'true' }}
