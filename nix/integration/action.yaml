@@ -53,7 +53,8 @@ runs:
             --arg name "$INPUT_NAME" \
             '
               (.packages[$system] // {})
-              | keys
+              | to_entries
+              | map(.value.name)
               | map(select(startswith("nixos-image-")))
               | index($name)
               | if . == null then "false" else "true" end
