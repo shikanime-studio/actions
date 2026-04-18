@@ -16,16 +16,15 @@ runs:
         INPUT_SYSTEM: ${{ inputs.system }}
       id: target
       run: |
-        system="$INPUT_SYSTEM"
-        if [ -z "$system" ]; then
+        if [ -z "$INPUT_SYSTEM" ]; then
           flake_url=".#packages.$INPUT_NAME"
           name="nixos-image-$INPUT_NAME"
         else
-          flake_url=".#packages.$system.$INPUT_NAME"
-          name="nixos-image-$system-$INPUT_NAME"
+          flake_url=".#packages.$INPUT_SYSTEM.$INPUT_NAME"
+          name="nixos-image-$INPUT_SYSTEM-$INPUT_NAME"
         fi
 
-        echo "system=$system" >> "$GITHUB_OUTPUT"
+        echo "system=$INPUT_SYSTEM" >> "$GITHUB_OUTPUT"
         echo "flake_url=$flake_url" >> "$GITHUB_OUTPUT"
         echo "name=$name" >> "$GITHUB_OUTPUT"
       shell: bash
