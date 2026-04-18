@@ -24,7 +24,6 @@ runs:
           name="nixos-image-$INPUT_SYSTEM-$INPUT_NAME"
         fi
 
-        echo "system=$INPUT_SYSTEM" >> "$GITHUB_OUTPUT"
         echo "flake_url=$flake_url" >> "$GITHUB_OUTPUT"
         echo "name=$name" >> "$GITHUB_OUTPUT"
       shell: bash
