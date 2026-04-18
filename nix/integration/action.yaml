@@ -4,6 +4,10 @@ inputs:
   name:
     description: Package name under packages.<system>.<name> to build
     required: true
+  ref:
+    default: ${{ github.ref }}
+    description: Git ref to build (branch, tag, or SHA)
+    required: false
   system:
     default: ""
     description: Nix system (used when building from package name)
@@ -107,3 +111,11 @@ runs:
         if-no-files-found: error
         name: ${{ steps.target.outputs.name }}
         path: ${{ steps.artifact.outputs.path }}
+    - if: ${{ startsWith(inputs.ref, 'refs/tags/') }}
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        INPUT_REF: ${{ inputs.ref }}
+        INPUT_REPO: ${{ inputs.repo }}
+        INPUT_PATH: ${{ steps.artifact.outputs.path }}
+      run: gh release upload "${INPUT_REF#refs/tags/}" "$INPUT_PATH" --repo "$INPUT_REPO" --clobber
+      shell: bash

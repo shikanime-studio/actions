@@ -6,8 +6,8 @@ inputs:
     description: The GitHub Token
     required: false
   ref:
-    default: ${{ github.ref_name || github.event.inputs.ref_name }}
-    description: Tag name for the release
+    default: ${{ github.ref }}
+    description: Git ref to build (branch, tag, or SHA)
     required: false
   repo:
     default: ${{ github.repository }}
@@ -16,26 +16,24 @@ inputs:
 runs:
   using: composite
   steps:
-    - env:
+    - if: ${{ startsWith(inputs.ref, 'refs/tags/') }}
+      env:
         GH_TOKEN: ${{ inputs.github-token }}
         INPUT_REF: ${{ inputs.ref }}
         INPUT_REPO: ${{ inputs.repo }}
       run: |
-        gh release view "$INPUT_REF" --repo "$INPUT_REPO" >/dev/null 2>&1 || \
-          gh release create "$INPUT_REF" \
+        REF_NAME="${INPUT_REF#refs/tags/}"
+        gh release view "$REF_NAME" --repo "$INPUT_REPO" >/dev/null 2>&1 || \
+          gh release create "$REF_NAME" \
             --repo "$INPUT_REPO"
       shell: bash
-    - continue-on-error: true
-      uses: actions/download-artifact@v7
-      with:
-        merge-multiple: true
-        path: artifacts
-    - env:
-        GH_TOKEN: ${{ inputs.github-token }}
+    - if: ${{ startsWith(inputs.ref, 'refs/tags/') }}
+      env:
         INPUT_REF: ${{ inputs.ref }}
-        INPUT_REPO: ${{ inputs.repo }}
       run: |
-        while IFS= read -r -d '' file; do
-          gh release upload "$INPUT_REF" "$file" --repo "$INPUT_REPO" --clobber
-        done < <(find artifacts -type f -print0)
+        REF_NAME="${INPUT_REF#refs/tags/}"
+        if [[ "$REF_NAME" =~ ^v?[0-9]+\.[0-9]+\.0$ ]]; then
+          BRANCH_NAME="release-$(printf '%s' "$REF_NAME" | sed -e 's/^v//' -e 's/[.][^.]*$//')"
+          git push origin "HEAD:refs/heads/$BRANCH_NAME"
+        fi
       shell: bash
