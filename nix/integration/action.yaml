@@ -84,8 +84,9 @@ runs:
         )
 
         if [ ${#MATCHES[@]} -eq 0 ]; then
-          echo "::error::NixOS image detected but no image artifacts found under ./result"
-          exit 1
+          echo "::warning::NixOS image detected but no image artifacts found under ./result; skipping upload"
+          echo "upload=false" >> "$GITHUB_OUTPUT"
+          exit 0
         fi
 
         if [ ${#MATCHES[@]} -ne 1 ]; then
@@ -95,10 +96,11 @@ runs:
         fi
 
         src="${MATCHES[0]}"
+        echo "upload=true" >> "$GITHUB_OUTPUT"
         echo "path=$src" >> "$GITHUB_OUTPUT"
       shell: bash
     - if: >-
-        ${{ steps.nixos.outputs.found == 'true' }}
+        ${{ steps.nixos.outputs.found == 'true' && steps.artifact.outputs.upload == 'true' }}
       uses: actions/upload-artifact@v7
       with:
         archive: false
