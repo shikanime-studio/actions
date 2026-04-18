@@ -1,4 +1,3 @@
----
 name: Release
 description: Create or update a GitHub release and upload workflow artifacts
 inputs:
