@@ -117,6 +117,7 @@ runs:
       run: |
         CONTAINER_REF="$INPUT_CONTAINER_REGISTRY/$INPUT_REPO/$INPUT_TARGET_NAME:$INPUT_CONTAINER_TAG"
         nix run "$INPUT_REGISTRY#oras" -- push "$CONTAINER_REF" \
+          --disable-path-validation \
           --artifact-type application/vnd.shikanime-studio.nixos.images.v1 \
           "$INPUT_PATHS:application/vnd.shikanime-studio.nixos.images.layer.v1+tar"
       shell: bash
