@@ -1,9 +1,29 @@
 name: Nix Integration
-description: Build a flake target and upload NixOS image artifacts when present
+description: Build a flake target and push NixOS image artifacts to a container registry when present
 inputs:
+  container-registry:
+    default: ghcr.io
+    description: Container registry host used when container-ref is empty (e.g. ghcr.io)
+    required: false
+  container-username:
+    default: ${{ github.actor }}
+    description: Container registry username (used for oras login)
+    required: false
+  container-tag:
+    default: ${{ github.sha }}
+    description: Container tag to push artifacts to (e.g. ghcr.io/owner/repo/pkg:tag). When empty, defaults to ghcr.io/<owner>/<repo>/<name>:<sha>"
+    required: false
+  container-token:
+    default: ${{ github.token }}
+    description: "OCI registry token/password (used for oras login). For ghcr.io, ensure the token has packages: write."
+    required: false
   name:
     description: Package name under packages.<system>.<name> to build
     required: true
+  repo:
+    default: ${{ github.repository }}
+    description: Repository name (used when container-ref is empty)
+    required: false
   system:
     default: ""
     description: Nix system (used when building from package name)
@@ -98,10 +118,36 @@ runs:
           echo "EOF"
         } >> "$GITHUB_OUTPUT"
       shell: bash
-    - if: >-
-        ${{ steps.nixos.outputs.found == 'true' && steps.artifact.outputs.upload == 'true' }}
-      uses: actions/upload-artifact@v7
-      with:
-        if-no-files-found: error
-        name: ${{ steps.target.outputs.name }}
-        path: ${{ steps.artifact.outputs.paths }}
+    - id: container-login
+      if: ${{ steps.nixos.outputs.found == 'true' && steps.artifact.outputs.upload == 'true' }}
+      env:
+        INPUT_CONTAINER_TOKEN: ${{ inputs.container-token }}
+        INPUT_CONTAINER_USERNAME: ${{ inputs.container-username }}
+        INPUT_CONTAINER_REGISTRY: ${{ inputs.container-registry }}
+      run: |
+        echo "$INPUT_CONTAINER_TOKEN" \
+          | nix run nixpkgs#oras -- login "$INPUT_CONTAINER_REGISTRY" --username "$INPUT_CONTAINER_USERNAME" --password-stdin
+      shell: bash
+    - if: ${{ steps.nixos.outputs.found == 'true' && steps.artifact.outputs.upload == 'true' }}
+      env:
+        INPUT_CONTAINER_REGISTRY: ${{ inputs.container-registry }}
+        INPUT_REPO: ${{ inputs.repo }}
+        INPUT_NAME: ${{ steps.target.outputs.name }}
+        INPUT_TAG: ${{ inputs.container-tag }}
+        INPUT_PATHS: ${{ steps.artifact.outputs.paths }}
+      run: |
+        args=()
+        while IFS= read -r path; do
+          [ -n "$path" ] || continue
+          args+=("$path")
+        done <<< "$INPUT_PATHS"
+
+        if [ ${#args[@]} -eq 0 ]; then
+          echo "::error::No artifact paths provided; expected at least one file to push"
+          exit 1
+        fi
+
+        nix run nixpkgs#oras -- push "$INPUT_CONTAINER_REGISTRY/$INPUT_REPO/$INPUT_NAME:$INPUT_TAG" \
+          --artifact-type application/vnd.shikanime-studio.nixos.images.v1 \
+          "${args[@]}"
+      shell: bash
