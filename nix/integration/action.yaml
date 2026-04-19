@@ -53,7 +53,16 @@ runs:
       shell: bash
     - env:
         INPUT_FLAKE_URL: ${{ steps.target.outputs.flake_url }}
-      run: nix build --accept-flake-config --no-pure-eval "$INPUT_FLAKE_URL"
+      run: |
+        PATHS="$(
+          nix build \
+            --accept-flake-config \
+            --no-pure-eval \
+            --no-link \
+            --print-out-paths \
+            "$INPUT_FLAKE_URL"
+        )"
+        echo "paths=$PATHS" >> "$GITHUB_OUTPUT"
       shell: bash
     - id: nixos
       env:
@@ -100,6 +109,7 @@ runs:
       env:
         INPUT_CONTAINER_REGISTRY: ${{ inputs.container-registry }}
         INPUT_CONTAINER_TAG: ${{ inputs.container-tag }}
+        INPUT_PATHS: ${{ steps.paths.outputs.paths }}
         INPUT_REGISTRY: ${{ inputs.registry }}
         INPUT_REPO: ${{ inputs.repo }}
         INPUT_TARGET_NAME: ${{ steps.target.outputs.name }}
@@ -107,5 +117,5 @@ runs:
         CONTAINER_REF="$INPUT_CONTAINER_REGISTRY/$INPUT_REPO/$INPUT_TARGET_NAME:$INPUT_CONTAINER_TAG"
         nix run "$INPUT_REGISTRY#oras" -- push "$CONTAINER_REF" \
           --artifact-type application/vnd.shikanime-studio.nixos.images.v1 \
-          ./result/:application/vnd.shikanime-studio.nixos.images.layer.v1+tar
+          "$INPUT_PATHS:application/vnd.shikanime-studio.nixos.images.layer.v1+tar"
       shell: bash
