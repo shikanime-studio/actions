@@ -53,8 +53,9 @@ runs:
       shell: bash
     - env:
         INPUT_FLAKE_URL: ${{ steps.target.outputs.flake_url }}
+      id: build
       run: |
-        PATHS="$(
+        OUT_PATHS="$(
           nix build \
             --accept-flake-config \
             --no-pure-eval \
@@ -62,7 +63,7 @@ runs:
             --print-out-paths \
             "$INPUT_FLAKE_URL"
         )"
-        echo "paths=$PATHS" >> "$GITHUB_OUTPUT"
+        echo "paths=$OUT_PATHS" >> "$GITHUB_OUTPUT"
       shell: bash
     - id: nixos
       env:
@@ -109,7 +110,7 @@ runs:
       env:
         INPUT_CONTAINER_REGISTRY: ${{ inputs.container-registry }}
         INPUT_CONTAINER_TAG: ${{ inputs.container-tag }}
-        INPUT_PATHS: ${{ steps.paths.outputs.paths }}
+        INPUT_PATHS: ${{ steps.build.outputs.paths }}
         INPUT_REGISTRY: ${{ inputs.registry }}
         INPUT_REPO: ${{ inputs.repo }}
         INPUT_TARGET_NAME: ${{ steps.target.outputs.name }}
