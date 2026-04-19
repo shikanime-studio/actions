@@ -9,9 +9,6 @@ inputs:
     default: ${{ github.head_ref }}
     description: The head branch to delete
     required: false
-  pull-request-url:
-    description: The Pull Request URL
-    required: true
 runs:
   using: composite
   steps:
@@ -19,7 +16,6 @@ runs:
       uses: shikanime-studio/actions/checkout@v9
       with:
         github-token: ${{ inputs.github-token }}
-        pull-request-url: ${{ inputs.pull-request-url }}
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
         INPUT_HEAD_REF: ${{ inputs.head-ref }}
