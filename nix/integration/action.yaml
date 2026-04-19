@@ -3,26 +3,26 @@ description: Build a flake target and push NixOS image artifacts to a container 
 inputs:
   container-registry:
     default: ghcr.io
-    description: Container registry host used when container-ref is empty (e.g. ghcr.io)
+    description: Container registry host
     required: false
   container-username:
     default: ${{ github.actor }}
-    description: Container registry username (used for oras login)
+    description: Container registry username
     required: false
   container-tag:
     default: ${{ github.sha }}
-    description: Container tag to push artifacts to (e.g. ghcr.io/owner/repo/pkg:tag). When empty, defaults to ghcr.io/<owner>/<repo>/<name>:<sha>"
+    description: Container tag to push artifacts to
     required: false
   container-token:
     default: ${{ github.token }}
-    description: "OCI registry token/password (used for oras login). For ghcr.io, ensure the token has packages: write."
+    description: "Container registry token/password. For ghcr.io, ensure the token has packages: write."
     required: false
   name:
     description: Package name under packages.<system>.<name> to build
     required: true
   repo:
     default: ${{ github.repository }}
-    description: Repository name (used when container-ref is empty)
+    description: Repository path as owner/repo (used when computing container reference)
     required: false
   system:
     default: ""
@@ -80,74 +80,26 @@ runs:
 
         echo "found=$FOUND" >> "$GITHUB_OUTPUT"
       shell: bash
-    - id: artifact
-      if: ${{ steps.nixos.outputs.found == 'true' }}
-      run: |
-        MATCHES=()
-        while IFS= read -r -d '' file; do
-          MATCHES+=("$file")
-        done < <(
-          find -L result -type f \( \
-            -name '*.iso' -o \
-            -name '*.img' -o \
-            -name '*.img.*' -o \
-            -name '*.qcow2' -o \
-            -name '*.raw' -o \
-            -name '*.vhd' -o \
-            -name '*.vhdx' -o \
-            -name '*.vmdk' -o \
-            -name '*.ova' -o \
-            -name '*.tar.gz' -o \
-            -name '*.tar.xz' -o \
-            -name '*.tar.zst' \
-          \) -print0
-        )
-
-        if [ ${#MATCHES[@]} -eq 0 ]; then
-          echo "::warning::NixOS image detected but no image artifacts found under ./result; skipping upload"
-          echo "upload=false" >> "$GITHUB_OUTPUT"
-          exit 0
-        fi
-
-        echo "upload=true" >> "$GITHUB_OUTPUT"
-        {
-          echo "paths<<EOF"
-          for file in "${MATCHES[@]}"; do
-            echo "$file"
-          done
-          echo "EOF"
-        } >> "$GITHUB_OUTPUT"
-      shell: bash
-    - id: container-login
-      if: ${{ steps.nixos.outputs.found == 'true' && steps.artifact.outputs.upload == 'true' }}
+    - if: ${{ steps.nixos.outputs.found == 'true' }}
       env:
+        INPUT_CONTAINER_REGISTRY: ${{ inputs.container-registry }}
         INPUT_CONTAINER_TOKEN: ${{ inputs.container-token }}
         INPUT_CONTAINER_USERNAME: ${{ inputs.container-username }}
-        INPUT_CONTAINER_REGISTRY: ${{ inputs.container-registry }}
       run: |
         echo "$INPUT_CONTAINER_TOKEN" \
-          | nix run nixpkgs#oras -- login "$INPUT_CONTAINER_REGISTRY" --username "$INPUT_CONTAINER_USERNAME" --password-stdin
+          | nix run nixpkgs#oras -- login "$INPUT_CONTAINER_REGISTRY" \
+            --username "$INPUT_CONTAINER_USERNAME" \
+            --password-stdin
       shell: bash
-    - if: ${{ steps.nixos.outputs.found == 'true' && steps.artifact.outputs.upload == 'true' }}
+    - if: ${{ steps.nixos.outputs.found == 'true' }}
       env:
         INPUT_CONTAINER_REGISTRY: ${{ inputs.container-registry }}
+        INPUT_CONTAINER_TAG: ${{ inputs.container-tag }}
         INPUT_REPO: ${{ inputs.repo }}
-        INPUT_NAME: ${{ steps.target.outputs.name }}
-        INPUT_TAG: ${{ inputs.container-tag }}
-        INPUT_PATHS: ${{ steps.artifact.outputs.paths }}
+        INPUT_TARGET_NAME: ${{ steps.target.outputs.name }}
       run: |
-        args=()
-        while IFS= read -r path; do
-          [ -n "$path" ] || continue
-          args+=("$path")
-        done <<< "$INPUT_PATHS"
-
-        if [ ${#args[@]} -eq 0 ]; then
-          echo "::error::No artifact paths provided; expected at least one file to push"
-          exit 1
-        fi
-
-        nix run nixpkgs#oras -- push "$INPUT_CONTAINER_REGISTRY/$INPUT_REPO/$INPUT_NAME:$INPUT_TAG" \
+        CONTAINER_REF="$INPUT_CONTAINER_REGISTRY/$INPUT_REPO/$INPUT_TARGET_NAME:$INPUT_CONTAINER_TAG"
+        nix run nixpkgs#oras -- push "$CONTAINER_REF" \
           --artifact-type application/vnd.shikanime-studio.nixos.images.v1 \
-          "${args[@]}"
+          ./result/:application/vnd.shikanime-studio.nixos.images.layer.v1+tar
       shell: bash
