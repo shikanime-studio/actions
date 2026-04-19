@@ -54,8 +54,14 @@ runs:
     - env:
         INPUT_FLAKE_URL: ${{ steps.target.outputs.flake_url }}
       run: |
-        PATHS="$(nix build --accept-flake-config --no-pure-eval
-        "$INPUT_FLAKE_URL" --no-link --print-out-paths)"
+        PATHS="$(
+          nix build \
+            --accept-flake-config \
+            --no-pure-eval \
+            --no-link \
+            --print-out-paths \
+            "$INPUT_FLAKE_URL"
+        )"
         echo "paths=$PATHS" >> "$GITHUB_OUTPUT"
       shell: bash
     - id: nixos
