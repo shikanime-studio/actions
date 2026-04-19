@@ -20,6 +20,10 @@ inputs:
   name:
     description: Package name under packages.<system>.<name> to build
     required: true
+  registry:
+    default: nixpkgs
+    description: Nix registry to use
+    required: false
   repo:
     default: ${{ github.repository }}
     description: Repository path as owner/repo (used when computing container reference)
@@ -85,9 +89,10 @@ runs:
         INPUT_CONTAINER_REGISTRY: ${{ inputs.container-registry }}
         INPUT_CONTAINER_TOKEN: ${{ inputs.container-token }}
         INPUT_CONTAINER_USERNAME: ${{ inputs.container-username }}
+        INPUT_REGISTRY: ${{ inputs.registry }}
       run: |
         echo "$INPUT_CONTAINER_TOKEN" \
-          | nix run nixpkgs#oras -- login "$INPUT_CONTAINER_REGISTRY" \
+          | nix run "$INPUT_REGISTRY#oras" -- login "$INPUT_CONTAINER_REGISTRY" \
             --username "$INPUT_CONTAINER_USERNAME" \
             --password-stdin
       shell: bash
@@ -95,11 +100,12 @@ runs:
       env:
         INPUT_CONTAINER_REGISTRY: ${{ inputs.container-registry }}
         INPUT_CONTAINER_TAG: ${{ inputs.container-tag }}
+        INPUT_REGISTRY: ${{ inputs.registry }}
         INPUT_REPO: ${{ inputs.repo }}
         INPUT_TARGET_NAME: ${{ steps.target.outputs.name }}
       run: |
         CONTAINER_REF="$INPUT_CONTAINER_REGISTRY/$INPUT_REPO/$INPUT_TARGET_NAME:$INPUT_CONTAINER_TAG"
-        nix run nixpkgs#oras -- push "$CONTAINER_REF" \
+        nix run "$INPUT_REGISTRY#oras" -- push "$CONTAINER_REF" \
           --artifact-type application/vnd.shikanime-studio.nixos.images.v1 \
           ./result/:application/vnd.shikanime-studio.nixos.images.layer.v1+tar
       shell: bash
