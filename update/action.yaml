@@ -46,7 +46,7 @@ runs:
       run: nix run "$INPUT_REGISTRY#ghstack" -- submit
       shell: bash
     - env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
+        GH_TOKEN: ${{ inputs.github-token }}
         INPUT_REGISTRY: ${{ inputs.registry }}
       if: inputs.method == 'sapling-pull-request'
       run: nix run "$INPUT_REGISTRY#sapling" -- pr submit
