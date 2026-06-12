@@ -343,7 +343,7 @@ jobs:
           github_access_token: >-
             ${{ steps.createGithubAppToken.outputs.token
                 || secrets.GITHUB_TOKEN }}
-      - uses: shikanime-studio/actions/update@v7
+      - uses: shikanime-studio/actions/update@v9
         with:
           gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
@@ -395,5 +395,5 @@ jobs:
           token: >-
             ${{ steps.createGithubAppToken.outputs.token
                 || secrets.GITHUB_TOKEN }}
-      - uses: shikanime-studio/actions/cleanup@v7
+      - uses: shikanime-studio/actions/cleanup@v9
 ```
