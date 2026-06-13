@@ -1,101 +1,50 @@
-# Agents
+# actions
 
-This repository provides comment-driven agents (composite actions) that
-automate common PR operations. Add them to workflows as shown in README,
-then trigger via PR comments.
+This repository provides comment-driven agents (composite actions) that automate common PR operations. Add them to workflows as shown in README, then trigger via PR comments.
 
-## Coding Style
+**Language:** Nix + JS/TS
 
-- Prefer composite `run:` steps in Bash over `actions/github-script` unless
-  JavaScript is required.
-- Template `${{ ... }}` directly inside `run:` scripts; only use `env:` when a
-  value is actually needed as an environment variable.
-- Avoid "alias" variables that just mirror inputs (e.g. `REGISTRY=...` then
-  `nix run "$REGISTRY#..."`); template `${{ inputs.* }}` directly in commands.
-- Prefer step-level `env:` for tokens/CLI auth variables (e.g. `GH_TOKEN`,
-  `GITHUB_TOKEN`) instead of `export` in the script body.
-- Write step outputs using `$GITHUB_OUTPUT` (not the deprecated `::set-output`).
-- Keep scripts small and explicit (avoid clever one-liners); fail fast on
-  unsupported values using `::warning::` / `::error::` as appropriate.
-- Keep command actions thin: orchestrate stack/config/checkout and delegate
-  behavior to the underlying action.
-- In consumer workflows, reference published actions as
-  `shikanime-studio/actions/xxx@vX`
-  instead of `./xxx` (use `./xxx` only for in-repo development/testing).
-- Centralize method-aware git operations to avoid copy-paste drift across
-  actions.
-- Avoid unused inputs and redundant steps; remove them when refactoring.
-- When changing action wiring or examples, update this file and README in the
-  same change.
-- Avoid changing files under `.github/` unless explicitly required.
-- Keep Markdown lines wrapped at 80 columns and run `nix fmt` before shipping.
+## Structure
+
+- `command/` — Comment-driven actions (land, rebase, close, backport, run)
+- `update/` — Flake input updates and publishing
+- `cleanup/` — Post-merge branch cleanup
+- `nix/` — Nix setup and matrix helper actions
+
+## Commit Style
+
+- Plain-text capitalized title, no conventional-commit prefix
+- Body with labels: `Design:`, `Related:`, `Closes #`
+- Keep Markdown lines wrapped at 80 columns and run `nix fmt` before shipping
+
+## Stack
+
+- 1 commit == 1 PR via ghstack
+- Amend + `ghstack` to resubmit
+- `ghstack land` on head PR to land the entire stack
+- Never `gh pr merge` (creates poisoned commits)
+- Never force-push ghstack branches
+- ghstack only works on HEAD commit chains, not detached HEADs
+
+## Protect `main`
+
+- Require 1 approving review
+- Require linear history (no merge commits)
+- Require signed commits
+- Squash+rebase merge only
 
 ## Comment Commands
 
-- .land
-  - Lands the current PR using the publication method determined from the
-    stack or an explicit param.
-  - Usage: `.land` or `.land | ghstack|slpr|ghpr`
-  - Permissions: contents:write, issues:write, pull-requests:write
-  - Action: `shikanime-studio/actions/command/land`
-
-- .rebase
-  - Rebases the current PR on its base branch.
-  - Usage: `.rebase`
-  - Permissions: contents:write, issues:write
-  - Action: `shikanime-studio/actions/command/rebase`
-
-- .close
-  - Closes the current PR and optionally cleans up remote branches,
-    depending on stack method.
-  - Usage: `.close`
-  - Permissions: pull-requests:write, contents:write, issues:write
-  - Action: `shikanime-studio/actions/command/close`
-
-- .backport
-  - Backports the current PR onto a target branch. Supports ghstack,
-    sapling PRs, and GitHub PRs.
-  - Usage: `.backport | <target-branch>`
-  - Permissions: contents:write, pull-requests:write, issues:write
-  - Action: `shikanime-studio/actions/command/backport`
-
-- .run
-  - Triggers a workflow dispatch on the same repository using GitHub CLI.
-  - Usage: `.run | <workflow-name-or-path>`
-  - Notes: The target workflow must have `workflow_dispatch` enabled.
-    Runs against the PR head ref.
-  - Permissions: actions:write (plus minimal read on contents/PRs)
-  - Action: `shikanime-studio/actions/command/run`
-
-## Non-Comment Workflows
-
-- update
-  - Updates flake inputs and publishes via ghstack/sapling/GitHub PR,
-    depending on configuration.
-  - Typical usage: scheduled or manual workflow with `workflow_dispatch`.
-  - Action: `shikanime-studio/actions/update`
-
-- cleanup
-  - Deletes branches after PR merge/close (stack-aware).
-  - Trigger: `pull_request: closed`
-  - Action: `shikanime-studio/actions/cleanup`
+- `.land` — Lands the current PR stack. Usage: `.land` or `.land | ghstack|slpr|ghpr`
+- `.rebase` — Rebases the current PR on its base branch
+- `.close` — Closes the current PR and optionally cleans up remote branches
+- `.backport` — Backports the current PR onto a target branch. Usage: `.backport | <target-branch>`
+- `.run` — Triggers a workflow dispatch. Usage: `.run | <workflow-name-or-path>`
 
 ## Nix Utilities
 
-- nix/setup
-  - Installs Nix and configures Cachix (optionally with QEMU for extra
-    platforms).
-  - Inputs: `extra-config` (extra Nix config), `extra-platforms`
-    (comma-separated: `amd64`, `arm64`).
-  - Action: `shikanime-studio/actions/nix/setup`
+- `nix/setup` — Installs Nix and configures Cachix (optionally with QEMU)
+- `nix/setup-checks-jobs` — Produces a matrix of `{ system, runner }` for checks
+- `nix/setup-packages-jobs` — Produces a matrix of `{ system, runner, name }` for package builds
 
-## Nix Matrix Helpers
-
-- nix/setup-checks-jobs
-  - Produces a matrix of `{ system, runner }` for checks from flake outputs.
-  - Input `systems`: JSON object `{ runner: [systems...] }`.
-
-- nix/setup-packages-jobs
-  - Produces a matrix of `{ system, runner, name }` for package builds.
-  - Inputs: `systems` as above; `excludes` JSON array of package names
-    (defaults include `devenv-up`, `devenv-test`).
+*Licensed under Apache-2.0. Test actions locally with `act` before submitting. Update README when adding new actions*
