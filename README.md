@@ -53,18 +53,10 @@ jobs:
           permission-issues: write
           permission-pull-requests: write
           private-key: ${{ secrets.OPERATOR_PRIVATE_KEY }}
-      - uses: actions/checkout@v6
+      - uses: shikanime-studio/actions/nix/setup@v9
         with:
-          fetch-depth: 0
-          token: >-
-            ${{ steps.createGithubAppToken.outputs.token
-                || secrets.GITHUB_TOKEN }}
-      - uses: cachix/install-nix-action@v31
-        with:
-          github_access_token: >-
-            ${{ steps.createGithubAppToken.outputs.token
-                || secrets.GITHUB_TOKEN }}
-      - uses: shikanime-studio/actions/command/land@main
+          github-token: ${{ steps.createGithubAppToken.outputs.token || secrets.GITHUB_TOKEN }}
+      - uses: shikanime-studio/actions/command/land@v9
         with:
           email: operator6o@shikanime.studio
           fullname: Operator 6O
@@ -90,18 +82,10 @@ jobs:
           permission-issues: write
           permission-pull-requests: write
           private-key: ${{ secrets.OPERATOR_PRIVATE_KEY }}
-      - uses: actions/checkout@v6
+      - uses: shikanime-studio/actions/nix/setup@v9
         with:
-          fetch-depth: 0
-          token: >-
-            ${{ steps.createGithubAppToken.outputs.token
-                || secrets.GITHUB_TOKEN }}
-      - uses: cachix/install-nix-action@v31
-        with:
-          github_access_token: >-
-            ${{ steps.createGithubAppToken.outputs.token
-                || secrets.GITHUB_TOKEN }}
-      - uses: shikanime-studio/actions/command/rebase@main
+          github-token: ${{ steps.createGithubAppToken.outputs.token || secrets.GITHUB_TOKEN }}
+      - uses: shikanime-studio/actions/command/rebase@v9
         with:
           email: operator6o@shikanime.studio
           fullname: Operator 6O
@@ -127,18 +111,10 @@ jobs:
           permission-issues: write
           permission-pull-requests: write
           private-key: ${{ secrets.OPERATOR_PRIVATE_KEY }}
-      - uses: actions/checkout@v6
+      - uses: shikanime-studio/actions/nix/setup@v9
         with:
-          fetch-depth: 0
-          token: >-
-            ${{ steps.createGithubAppToken.outputs.token
-                || secrets.GITHUB_TOKEN }}
-      - uses: cachix/install-nix-action@v31
-        with:
-          github_access_token: >-
-            ${{ steps.createGithubAppToken.outputs.token
-                || secrets.GITHUB_TOKEN }}
-      - uses: shikanime-studio/actions/command/close@main
+          github-token: ${{ steps.createGithubAppToken.outputs.token || secrets.GITHUB_TOKEN }}
+      - uses: shikanime-studio/actions/command/close@v9
         with:
           github-token: >-
             ${{ steps.createGithubAppToken.outputs.token
@@ -159,18 +135,10 @@ jobs:
           permission-issues: write
           permission-pull-requests: write
           private-key: ${{ secrets.OPERATOR_PRIVATE_KEY }}
-      - uses: actions/checkout@v6
+      - uses: shikanime-studio/actions/nix/setup@v9
         with:
-          fetch-depth: 0
-          token: >-
-            ${{ steps.createGithubAppToken.outputs.token
-                || secrets.GITHUB_TOKEN }}
-      - uses: cachix/install-nix-action@v31
-        with:
-          github_access_token: >-
-            ${{ steps.createGithubAppToken.outputs.token
-                || secrets.GITHUB_TOKEN }}
-      - uses: shikanime-studio/actions/command/backport@main
+          github-token: ${{ steps.createGithubAppToken.outputs.token || secrets.GITHUB_TOKEN }}
+      - uses: shikanime-studio/actions/command/backport@v9
         with:
           github-token: >-
             ${{ steps.createGithubAppToken.outputs.token
@@ -190,7 +158,7 @@ Linux) enable QEMU for additional platforms.
 
 ```yaml
 steps:
-  - uses: shikanime-studio/actions/nix/setup@main
+  - uses: shikanime-studio/actions/nix/setup@v9
     with:
       github-token: ${{ secrets.GITHUB_TOKEN }}
       cachix-name: my-cache
@@ -332,17 +300,9 @@ jobs:
           permission-issues: write
           permission-pull-requests: write
           private-key: ${{ secrets.OPERATOR_PRIVATE_KEY }}
-      - uses: actions/checkout@v6
+      - uses: shikanime-studio/actions/nix/setup@v9
         with:
-          fetch-depth: 0
-          token: >-
-            ${{ steps.createGithubAppToken.outputs.token
-                || secrets.GITHUB_TOKEN }}
-      - uses: cachix/install-nix-action@v31
-        with:
-          github_access_token: >-
-            ${{ steps.createGithubAppToken.outputs.token
-                || secrets.GITHUB_TOKEN }}
+          github-token: ${{ steps.createGithubAppToken.outputs.token || secrets.GITHUB_TOKEN }}
       - uses: shikanime-studio/actions/update@v9
         with:
           gpg-passphrase: ${{ secrets.GPG_PASSPHRASE }}
@@ -389,11 +349,8 @@ jobs:
           client-id: ${{ vars.OPERATOR_APP_CLIENT_ID }}
           permission-contents: write
           private-key: ${{ secrets.OPERATOR_PRIVATE_KEY }}
-      - uses: actions/checkout@v6
+      - uses: shikanime-studio/actions/nix/setup@v9
         with:
-          fetch-depth: 0
-          token: >-
-            ${{ steps.createGithubAppToken.outputs.token
-                || secrets.GITHUB_TOKEN }}
+          github-token: ${{ steps.createGithubAppToken.outputs.token || secrets.GITHUB_TOKEN }}
       - uses: shikanime-studio/actions/cleanup@v9
 ```

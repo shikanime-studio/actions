@@ -41,10 +41,27 @@ This repository provides comment-driven agents (composite actions) that automate
 - `.backport` — Backports the current PR onto a target branch. Usage: `.backport | <target-branch>`
 - `.run` — Triggers a workflow dispatch. Usage: `.run | <workflow-name-or-path>`
 
+## Workflow Triggers
+
+- Comment commands are triggered by `issue_comment` on PRs
+- `workflow_dispatch` is enabled on the Commands workflow for manual testing
+- Release workflow supports `workflow_dispatch` for manual releases
+
 ## Nix Utilities
 
 - `nix/setup` — Installs Nix and configures Cachix (optionally with QEMU)
 - `nix/setup-checks-jobs` — Produces a matrix of `{ system, runner }` for checks
 - `nix/setup-packages-jobs` — Produces a matrix of `{ system, runner, name }` for package builds
+
+## Backport Strategy
+
+- `ghstack` method: unlinks the stack, rebases onto target, resubmits
+- `sapling` method: uses sapling pr unlink/rebase/submit
+- `github-pull-request` method: uses plain git cherry-pick (no jj dependency). Creates a `backport/<target>/<head>` branch and opens a PR
+
+## Update Strategy
+
+- `ghstack`/`sapling` methods: use respective tools for submission
+- `github-pull-request` method: uses plain git (no jj dependency). Creates a timestamped `update/flake-<datetime>` branch and opens a PR. Skips if no changes.
 
 *Licensed under Apache-2.0. Test actions locally with `act` before submitting. Update README when adding new actions*

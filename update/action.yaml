@@ -51,33 +51,29 @@ runs:
       if: inputs.method == 'sapling-pull-request'
       run: nix run "$INPUT_REGISTRY#sapling" -- pr submit
       shell: bash
-    - continue-on-error: true
-      env:
-        INPUT_REGISTRY: ${{ inputs.registry }}
-      if: inputs.method == 'github-pull-request'
-      run: nix run "$INPUT_REGISTRY#jujutsu" -- git init
-      shell: bash
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
         INPUT_BASE: ${{ inputs.base }}
         INPUT_COMMIT_MESSAGE: ${{ inputs.commit-message }}
-        INPUT_REGISTRY: ${{ inputs.registry }}
         INPUT_USERNAME: ${{ inputs.username }}
       if: inputs.method == 'github-pull-request'
       run: |
-        nix run "$INPUT_REGISTRY#jujutsu" -- git fetch --remote origin
-        nix run "$INPUT_REGISTRY#jujutsu" -- config set \
-          --repo templates.git_push_bookmark \
-          "\"$INPUT_USERNAME/push-\" ++ change_id.short()"
-        nix run "$INPUT_REGISTRY#jujutsu" -- git push --change @
+        git add flake.lock
+        if git diff --cached --quiet; then
+          echo "No changes to commit."
+          exit 0
+        fi
 
-        PUSH_BRANCH=$(nix run "$INPUT_REGISTRY#jujutsu" -- log \
-          --limit 1 \
-          --template "{{bookmarks}}" \
-          @)
+        git config user.email "${INPUT_USERNAME}@users.noreply.github.com"
+        git config user.name "$INPUT_USERNAME"
+
+        UPDATE_BRANCH="update/flake-$(date +%Y%m%d-%H%M%S)"
+        git checkout -b "$UPDATE_BRANCH"
+        git commit -m "$INPUT_COMMIT_MESSAGE"
+        git push origin "$UPDATE_BRANCH"
 
         EXISTING=$(gh pr list \
-          --head "$PUSH_BRANCH" \
+          --head "$UPDATE_BRANCH" \
           --base "$INPUT_BASE" \
           --state open \
           --json number \
@@ -85,11 +81,11 @@ runs:
 
         if [ -z "$EXISTING" ]; then
           gh pr create \
-            --head "$PUSH_BRANCH" \
+            --head "$UPDATE_BRANCH" \
             --base "$INPUT_BASE" \
             --title "$INPUT_COMMIT_MESSAGE" \
             --body "Automated flake update."
         else
-          echo "Existing open PR #$EXISTING for $PUSH_BRANCH -> $INPUT_BASE, not creating a new one."
+          echo "Existing open PR #$EXISTING for $UPDATE_BRANCH -> $INPUT_BASE, not creating a new one."
         fi
       shell: bash

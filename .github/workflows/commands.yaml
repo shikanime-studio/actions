@@ -139,5 +139,6 @@ name: Commands
   issue_comment:
     types:
       - created
+  workflow_dispatch:
 permissions:
   contents: read
