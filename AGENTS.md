@@ -1,4 +1,4 @@
-# actions
+# Actions
 
 This repository provides comment-driven agents (composite actions) that automate common PR operations. Add them to workflows as shown in README, then trigger via PR comments.
 
