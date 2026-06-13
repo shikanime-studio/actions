@@ -1,6 +1,8 @@
 # Actions
 
-This repository provides comment-driven agents (composite actions) that automate common PR operations. Add them to workflows as shown in README, then trigger via PR comments.
+This repository provides comment-driven agents (composite actions) that automate
+common PR operations. Add them to workflows as shown in README, then trigger via
+PR comments.
 
 **Language:** Nix + JS/TS
 
@@ -38,13 +40,16 @@ This repository provides comment-driven agents (composite actions) that automate
 - `.land` — Lands the current PR stack. Usage: `.land` or `.land | ghstack|slpr|ghpr`
 - `.rebase` — Rebases the current PR on its base branch
 - `.close` — Closes the current PR and optionally cleans up remote branches
-- `.backport` — Backports the current PR onto a target branch. Usage: `.backport | <target-branch>`
+- `.backport` — Backports the current PR onto a target branch. Usage:
+  `.backport | <target-branch>`
 - `.run` — Triggers a workflow dispatch. Usage: `.run | <workflow-name-or-path>`
 
 ## Nix Utilities
 
 - `nix/setup` — Installs Nix and configures Cachix (optionally with QEMU)
 - `nix/setup-checks-jobs` — Produces a matrix of `{ system, runner }` for checks
-- `nix/setup-packages-jobs` — Produces a matrix of `{ system, runner, name }` for package builds
+- `nix/setup-packages-jobs` — Produces a matrix of `{ system, runner, name }` for
+  package builds
 
-*Licensed under Apache-2.0. Test actions locally with `act` before submitting. Update README when adding new actions*
+*Licensed under Apache-2.0. Test actions locally with `act` before submitting.
+Update README when adding new actions*
