@@ -23,10 +23,7 @@ outputs:
 runs:
   using: composite
   steps:
-    - env:
-        INPUT_EXCLUDES: ${{ inputs.excludes }}
-        INPUT_SYSTEMS: ${{ inputs.systems }}
-      id: matrix
+    - id: matrix
       run: |
         JSON="$(nix flake show --json --all-systems --accept-flake-config --no-pure-eval)"
         MATRIX="$(
@@ -56,3 +53,6 @@ runs:
         continue=$([ "$MATRIX" = "[]" ] && echo "false" || echo "true")
         echo "continue=$continue" >> "$GITHUB_OUTPUT"
       shell: bash
+      env:
+        INPUT_EXCLUDES: ${{ inputs.excludes }}
+        INPUT_SYSTEMS: ${{ inputs.systems }}

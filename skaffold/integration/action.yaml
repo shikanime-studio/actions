@@ -16,16 +16,13 @@ runs:
   using: composite
   steps:
     - id: platform
-      env:
-        INPUT_PLATFORMS: ${{ inputs.platforms }}
       run: |
         SKAFFOLD_PLATFORM="$(printf '%s' "$INPUT_PLATFORMS" | jq -r 'join(",")')"
         echo "platform=$SKAFFOLD_PLATFORM" >> "$GITHUB_OUTPUT"
       shell: bash
-    - env:
-        SKAFFOLD_PLATFORM: ${{ steps.platform.outputs.platform }}
-        SKAFFOLD_PROFILE: ${{ inputs.profile }}
-      id: skaffold
+      env:
+        INPUT_PLATFORMS: ${{ inputs.platforms }}
+    - id: skaffold
       run: |
         skaffold config set --global collect-metrics false
         skaffold build
@@ -36,3 +33,6 @@ runs:
           echo 'EOF'
         } >> "$GITHUB_OUTPUT"
       shell: bash
+      env:
+        SKAFFOLD_PLATFORM: ${{ steps.platform.outputs.platform }}
+        SKAFFOLD_PROFILE: ${{ inputs.profile }}
