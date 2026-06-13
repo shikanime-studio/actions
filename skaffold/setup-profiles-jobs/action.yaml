@@ -15,9 +15,7 @@ outputs:
 runs:
   using: composite
   steps:
-    - env:
-        INPUT_PATH: ${{ inputs.path }}
-      id: matrix
+    - id: matrix
       run: |
         FILE="$INPUT_PATH/skaffold.yaml"
         if [ ! -f "$FILE" ]; then
@@ -29,3 +27,5 @@ runs:
         continue=$([ "$MATRIX" = "[]" ] && echo "false" || echo "true")
         echo "continue=$continue" >> "$GITHUB_OUTPUT"
       shell: bash
+      env:
+        INPUT_PATH: ${{ inputs.path }}

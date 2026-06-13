@@ -37,7 +37,8 @@ PR comments.
 
 ## Comment Commands
 
-- `.land` — Lands the current PR stack. Usage: `.land` or `.land | ghstack|slpr|ghpr`
+- `.land` — Lands the current PR stack. Usage: `.land` or
+  `.land | ghstack|slpr|ghpr`
 - `.rebase` — Rebases the current PR on its base branch
 - `.close` — Closes the current PR and optionally cleans up remote branches
 - `.backport` — Backports the current PR onto a target branch. Usage:
@@ -48,8 +49,8 @@ PR comments.
 
 - `nix/setup` — Installs Nix and configures Cachix (optionally with QEMU)
 - `nix/setup-checks-jobs` — Produces a matrix of `{ system, runner }` for checks
-- `nix/setup-packages-jobs` — Produces a matrix of `{ system, runner, name }` for
-  package builds
+- `nix/setup-packages-jobs` — Produces a matrix of `{ system, runner, name }`
+  for package builds
 
-*Licensed under Apache-2.0. Test actions locally with `act` before submitting.
-Update README when adding new actions*
+_Licensed under Apache-2.0. Test actions locally with `act` before submitting.
+Update README when adding new actions_

@@ -32,9 +32,7 @@ runs:
       uses: docker/setup-qemu-action@v4
       with:
         platforms: ${{ inputs.extra-platforms }}
-    - env:
-        INPUT_EXTRA_PLATFORMS: ${{ inputs.extra-platforms }}
-      id: extra-platforms-config
+    - id: extra-platforms-config
       if: ${{ inputs.extra-platforms != '' }}
       run: |
         NIX_PLATFORMS=""
@@ -64,6 +62,8 @@ runs:
           echo "nix-config=extra-platforms = $NIX_PLATFORMS" >> "$GITHUB_OUTPUT"
         fi
       shell: bash
+      env:
+        INPUT_EXTRA_PLATFORMS: ${{ inputs.extra-platforms }}
     - uses: cachix/install-nix-action@v31
       with:
         extra_nix_config: |
@@ -73,6 +73,6 @@ runs:
     - if: ${{ inputs.cachix-name != '' }}
       uses: cachix/cachix-action@v17
       with:
-        authToken: ${{ inputs.cachix-auth-token }}
         name: ${{ inputs.cachix-name }}
+        authToken: ${{ inputs.cachix-auth-token }}
         signingKey: ${{ inputs.cachix-signing-key }}
