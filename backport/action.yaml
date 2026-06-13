@@ -48,42 +48,33 @@ runs:
           --dest "$INPUT_TARGET_BRANCH"
         nix run "$INPUT_REGISTRY#sapling" -- pr submit
       shell: bash
-    - continue-on-error: true
-      env:
-        INPUT_REGISTRY: ${{ inputs.registry }}
-      if: inputs.method == 'github-pull-request'
-      run: |
-        nix run "$INPUT_REGISTRY#jujutsu" -- git init
-      shell: bash
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
         INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
-        INPUT_REGISTRY: ${{ inputs.registry }}
         INPUT_TARGET_BRANCH: ${{ inputs.target-branch }}
         INPUT_USERNAME: ${{ inputs.username }}
       if: inputs.method == 'github-pull-request'
       run: |
-        nix run "$INPUT_REGISTRY#jujutsu" -- git fetch --remote origin
-        nix run "$INPUT_REGISTRY#jujutsu" -- config set \
-          --repo templates.git_push_bookmark \
-          "\"$INPUT_USERNAME/push-\" ++ change_id.short()"
-        nix run "$INPUT_REGISTRY#jujutsu" -- new "$INPUT_TARGET_BRANCH@origin"
-        nix run "$INPUT_REGISTRY#jujutsu" -- rebase \
-          -b @ \
-          -o "$INPUT_PULL_REQUEST_URL"
-        nix run "$INPUT_REGISTRY#jujutsu" -- git push --change @
-
-        PUSH_BRANCH=$(nix run "$INPUT_REGISTRY#jujutsu" -- log \
-          --limit 1 \
-          --template "{{bookmarks}}" \
-          @)
-
         ORIG_TITLE=$(gh pr view "$INPUT_PULL_REQUEST_URL" --json title -q .title)
-        ORIG_BODY_FILE=<(gh pr view "$INPUT_PULL_REQUEST_URL" --json body -q .body)
+        ORIG_BODY=$(gh pr view "$INPUT_PULL_REQUEST_URL" --json body -q .body)
+        ORIG_HEAD=$(gh pr view "$INPUT_PULL_REQUEST_URL" --json headRefName -q .headRefName)
+
+        git fetch origin "$INPUT_TARGET_BRANCH" "$ORIG_HEAD"
+
+        BACKPORT_BRANCH="backport/${INPUT_TARGET_BRANCH}/${ORIG_HEAD}"
+        git checkout -b "$BACKPORT_BRANCH" "origin/$INPUT_TARGET_BRANCH"
+
+        if ! git cherry-pick "origin/$ORIG_HEAD"; then
+          echo "Cherry-pick failed. Manual resolution required."
+          git cherry-pick --abort
+          exit 1
+        fi
+
+        git push origin "$BACKPORT_BRANCH"
 
         gh pr create \
-          --head "$PUSH_BRANCH" \
+          --head "$BACKPORT_BRANCH" \
           --base "$INPUT_TARGET_BRANCH" \
           --title "$ORIG_TITLE" \
-          --body-file "$ORIG_BODY_FILE"
+          --body "$ORIG_BODY"
       shell: bash
