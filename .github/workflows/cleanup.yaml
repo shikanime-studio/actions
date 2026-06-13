@@ -12,6 +12,7 @@ jobs:
       - uses: shikanime-studio/actions/cleanup@v9
         with:
           github-token: ${{ steps.createGithubAppToken.outputs.token || secrets.GITHUB_TOKEN }}
+          pull-request-url: ${{ github.event.pull_request.html_url }}
 name: Cleanup
 'on':
   pull_request:
