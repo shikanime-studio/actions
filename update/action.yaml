@@ -53,11 +53,10 @@ runs:
       if: inputs.method == 'sapling-pull-request'
       run: nix run "$INPUT_REGISTRY#sapling" -- pr submit
       shell: bash
-    - continue-on-error: true
-      env:
+    - env:
         INPUT_REGISTRY: ${{ inputs.registry }}
       if: inputs.method == 'github-pull-request'
-      run: nix run "$INPUT_REGISTRY#jujutsu" -- git init
+      run: nix run "$INPUT_REGISTRY#jujutsu" -- git init --colocate
       shell: bash
     - env:
         GH_TOKEN: ${{ inputs.github-token }}

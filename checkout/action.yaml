@@ -171,6 +171,14 @@ runs:
         'github-pull-request'
       run: gh pr checkout "$INPUT_PULL_REQUEST_URL"
       shell: bash
+    - env:
+        INPUT_REGISTRY: ${{ inputs.registry }}
+      if:
+        inputs.pull-request-url != '' && steps.stack.outputs.method ==
+        'github-pull-request' && inputs.sign-commits == 'true'
+      run: |
+        nix run "$INPUT_REGISTRY#jujutsu" -- git init --colocate
+      shell: bash
     - id: gpg
       if: ${{ inputs.sign-commits == 'true' }}
       uses: crazy-max/ghaction-import-gpg@v7
