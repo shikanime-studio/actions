@@ -1,8 +1,7 @@
 # Actions
 
-This repository provides comment-driven agents (composite actions) that automate
-common PR operations. Add them to workflows as shown in README, then trigger via
-PR comments.
+Comment-driven composite GitHub Actions that automate common PR operations.
+Add them to workflows as shown in README, then trigger via PR comments.
 
 **Language:** Nix + JS/TS
 
@@ -12,6 +11,24 @@ PR comments.
 - `update/` — Flake input updates and publishing
 - `cleanup/` — Post-merge branch cleanup
 - `nix/` — Nix setup and matrix helper actions
+
+## Comment Commands
+
+- `.land` — Lands the current PR stack. Usage: `.land` or
+  `.land | ghstack|slpr|ghpr`
+- `.rebase` — Rebases the current PR on its base branch
+- `.close` — Closes the current PR and optionally cleans up remote branches
+- `.backport` — Backports the current PR onto a target branch. Usage:
+  `.backport | <target-branch>`
+- `.run` — Triggers a workflow dispatch. Usage:
+  `.run | <workflow-name-or-path>`
+
+## Nix Utilities
+
+- `nix/setup` — Installs Nix and configures Cachix (optionally with QEMU)
+- `nix/setup-checks-jobs` — Produces a matrix of `{ system, runner }` for checks
+- `nix/setup-packages-jobs` — Produces a matrix of
+  `{ system, runner, name }` for package builds
 
 ## Commit Style
 
@@ -35,22 +52,6 @@ PR comments.
 - Require signed commits
 - Squash+rebase merge only
 
-## Comment Commands
-
-- `.land` — Lands the current PR stack. Usage: `.land` or
-  `.land | ghstack|slpr|ghpr`
-- `.rebase` — Rebases the current PR on its base branch
-- `.close` — Closes the current PR and optionally cleans up remote branches
-- `.backport` — Backports the current PR onto a target branch. Usage:
-  `.backport | <target-branch>`
-- `.run` — Triggers a workflow dispatch. Usage: `.run | <workflow-name-or-path>`
-
-## Nix Utilities
-
-- `nix/setup` — Installs Nix and configures Cachix (optionally with QEMU)
-- `nix/setup-checks-jobs` — Produces a matrix of `{ system, runner }` for checks
-- `nix/setup-packages-jobs` — Produces a matrix of `{ system, runner, name }`
-  for package builds
-
-_Licensed under Apache-2.0. Test actions locally with `act` before submitting.
-Update README when adding new actions_
+*Licensed under Apache-2.0. Test actions locally with `act` before submitting.
+Update README when adding new actions. Always use worktrees when making
+changes.*
