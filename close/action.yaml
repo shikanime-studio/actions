@@ -1,43 +1,89 @@
 name: Close
-description: Close a pull request
+description: Close pull request on a pull request head ref
 inputs:
+  app-slug:
+    description: App slug from actions/create-github-app-token outputs (for bot identity)
+    required: false
+    default: ""
   github-token:
     default: ${{ github.token }}
     description: The GitHub Token
     required: false
-  method:
-    default: github-pull-request
-    description:
-      One of 'ghstack', 'sapling-pull-request', or 'github-pull-request'
-      (required when invoking this action directly)
-    required: false
   pull-request-url:
-    default:
-      ${{ github.event.pull_request.html_url ||
-      github.event.issue.pull_request.html_url }}
+    default: ${{ github.event.issue.pull_request.html_url }}
     description: The Pull Request URL
     required: false
   registry:
     default: nixpkgs
     description: Nix registry to use
     required: false
+  username:
+    default: github-actions
+    description: Username
+    required: false
+outputs:
+  method:
+    description: The close method used (ghstack|slpr|ghpr)
+    value: ${{ steps.resolve.outputs.method }}
 runs:
   using: composite
   steps:
-    - env:
-        INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
-        INPUT_REGISTRY: ${{ inputs.registry }}
-      if: inputs.method == 'ghstack'
+    - id: resolve
+      shell: bash
       run: |
-        nix run "$INPUT_REGISTRY#ghstack" -- action \
-          --close \
-          "$INPUT_PULL_REQUEST_URL"
-      shell: bash
-    - env:
+        PR_URL="${{ inputs.pull-request-url }}"
+        METHOD="${{ inputs.method }}"
+        BRANCH=$(gh pr view "$PR_URL" --json headRefName -q .headRefName 2>/dev/null || echo "")
+        if [ -z "$METHOD" ] || [ "$METHOD" = "github-pull-request" ]; then
+          if [[ "$BRANCH" =~ ^gh/[^/]+/[0-9]+/head$ ]]; then
+            METHOD="ghstack"
+          elif [[ "$BRANCH" =~ ^pr[0-9]+$ ]]; then
+            METHOD="sapling-pull-request"
+          else
+            METHOD="github-pull-request"
+          fi
+        fi
+        echo "method=$METHOD" >> "$GITHUB_OUTPUT"
+        echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+      env:
         GH_TOKEN: ${{ inputs.github-token }}
-        INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
-      if:
-        inputs.method == 'sapling-pull-request' || inputs.method ==
-        'github-pull-request'
-      run: gh pr close --delete-branch "$INPUT_PULL_REQUEST_URL"
+    - env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        INPUT_GITHUB_URL: ${{ inputs.github-url }}
+        INPUT_USERNAME: ${{ inputs.username }}
+      if: steps.resolve.outputs.method == 'ghstack'
+      run: |
+        GHSTACKRC="${GHSTACKRC:-$HOME/.ghstackrc}"
+        cat > "$GHSTACKRC" <<EOF
+        [ghstack]
+        github_url = $INPUT_GITHUB_URL
+        github_oauth = $GITHUB_TOKEN
+        github_username = $INPUT_USERNAME
+        EOF
+        nix run "${{ inputs.registry }}#ghstack" -- action --close "${{ inputs.pull-request-url }}"
       shell: bash
+    # Close via octokit/request-action (slpr and ghpr)
+    - uses: octokit/request-action@v2.x
+      id: close_pr
+      with:
+        route: PATCH /repos/{owner}/{repo}/pulls/{pull_number}
+        owner: ${{ github.repository_owner }}
+        repo: ${{ github.event.repository.name }}
+        pull_number: ${{ github.event.issue.number }}
+        state: closed
+      if: |
+        (steps.resolve.outputs.method == 'sapling-pull-request' || steps.resolve.outputs.method == 'github-pull-request')
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+    # Delete the associated branch
+    - uses: octokit/request-action@v2.x
+      if: |
+        (steps.resolve.outputs.method == 'sapling-pull-request' || steps.resolve.outputs.method == 'github-pull-request') &&
+        steps.close_pr.outputs.status == '200'
+      with:
+        route: DELETE /repos/{owner}/{repo}/git/refs/heads/{branch}
+        owner: ${{ github.repository_owner }}
+        repo: ${{ github.event.repository.name }}
+        branch: ${{ steps.resolve.outputs.branch }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}

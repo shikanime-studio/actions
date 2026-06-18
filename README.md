@@ -395,3 +395,34 @@ jobs:
                 || secrets.GITHUB_TOKEN }}
       - uses: shikanime-studio/actions/cleanup@v9
 ```
+
+## API Calls
+
+Actions use two approaches for GitHub API interactions:
+
+1. **`octokit/request-action`** — Used for structured API calls (closing PRs,
+   creating PRs, deleting branches, merging PRs) where the route and parameters
+   are known in advance. This avoids shell escaping issues and provides typed
+   outputs (`data`, `headers`, `status`).
+
+2. **`gh` CLI** — Used where it simplifies the workflow (e.g. querying PR
+   details, ghstack configuration, flake operations).
+
+## App Identity and Git Configuration
+
+When you pass `app-slug` to an action (from `create-github-app-token`'s
+`app-slug` output), the action automatically resolves the bot's numeric user ID
+via the GitHub API and configures git, sapling, and jj with the correct bot
+identity:
+
+```
+user.name  = <app-slug>[bot]
+user.email = <id>+<app-slug>[bot]@users.noreply.github.com
+```
+
+If `fullname` or `email` inputs are set explicitly, they take precedence over
+the resolved bot identity. This ensures commits and PRs are attributed to the
+GitHub App bot rather than the default `github-actions[bot]`.
+
+For jj-based methods (ghpr), the action configures jj's signing settings
+using GPG when `sign-commits` is true.
