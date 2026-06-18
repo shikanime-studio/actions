@@ -70,7 +70,7 @@ runs:
           ${{ steps.extra-platforms-config.outputs.nix-config }}
           ${{ inputs.extra-config }}
         github_access_token: ${{ inputs.github-token }}
-    - if: ${{ inputs.cachix-name != '' }}
+    - if: ${{ inputs.cachix-name != '' && inputs.cachix-auth-token != '' }}
       uses: cachix/cachix-action@v17
       with:
         name: ${{ inputs.cachix-name }}
