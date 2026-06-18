@@ -1,7 +1,7 @@
 # Actions
 
-Comment-driven composite GitHub Actions that automate common PR operations.
-Add them to workflows as shown in README, then trigger via PR comments.
+Comment-driven composite GitHub Actions that automate common PR operations. Add
+them to workflows as shown in README, then trigger via PR comments.
 
 **Language:** Nix + JS/TS
 
@@ -20,15 +20,14 @@ Add them to workflows as shown in README, then trigger via PR comments.
 - `.close` — Closes the current PR and optionally cleans up remote branches
 - `.backport` — Backports the current PR onto a target branch. Usage:
   `.backport | <target-branch>`
-- `.run` — Triggers a workflow dispatch. Usage:
-  `.run | <workflow-name-or-path>`
+- `.run` — Triggers a workflow dispatch. Usage: `.run | <workflow-name-or-path>`
 
 ## Nix Utilities
 
 - `nix/setup` — Installs Nix and configures Cachix (optionally with QEMU)
 - `nix/setup-checks-jobs` — Produces a matrix of `{ system, runner }` for checks
-- `nix/setup-packages-jobs` — Produces a matrix of
-  `{ system, runner, name }` for package builds
+- `nix/setup-packages-jobs` — Produces a matrix of `{ system, runner, name }`
+  for package builds
 
 ## Commit Style
 
@@ -42,14 +41,13 @@ Add them to workflows as shown in README, then trigger via PR comments.
 - The commit title **is** the PR title; the commit body **is** the PR body
 - Split work into stacked PRs to keep each PR small and reviewable
 - To pull down an existing stack: `ghstack checkout <PR_NUMBER>`
-- To update a PR: edit files, then `jj squash` (or `git commit --amend`) into the
-  **target commit** of the stack — the one that PR represents; the commit message
-  updates the PR title and body automatically when resubmitted
+- To update a PR: edit files, then `jj squash` (or `git commit --amend`) into
+  the **target commit** of the stack — the one that PR represents; the commit
+  message updates the PR title and body automatically when resubmitted
 - Resubmit with `ghstack` after squashing
 - `ghstack land` on the head PR to land the entire stack
 - Never `gh pr merge` (creates poisoned commits)
 - Never force-push ghstack branches
-
 
 ## Protect `main`
 
@@ -58,6 +56,6 @@ Add them to workflows as shown in README, then trigger via PR comments.
 - Require signed commits
 - Squash+rebase merge only
 
-*Licensed under Apache-2.0. Test actions locally with `act` before submitting.
+_Licensed under Apache-2.0. Test actions locally with `act` before submitting.
 Update README when adding new actions. Always use worktrees when making
-changes.*
+changes._

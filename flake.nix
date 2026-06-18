@@ -76,10 +76,10 @@
         {
           devenv.shells.default = {
             imports = [
-              devlib.devenvModules.github
+              devlib.devenvModules.git
               devlib.devenvModules.nix
               devlib.devenvModules.shell
-              devlib.devenvModules.shikanime
+              devlib.devenvModules.shikanime-studio
             ];
             license = {
               enable = true;
