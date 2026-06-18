@@ -1,37 +1,92 @@
 name: Land
 description: Land a pull request
 inputs:
+  app-slug:
+    description: App slug from actions/create-github-app-token outputs (for bot identity)
+    required: false
+    default: ""
   base:
     default: main
     description: The base branch to rebase onto
     required: false
-  method:
-    default: github-pull-request
-    description:
-      One of 'ghstack', 'sapling-pull-request', or 'github-pull-request'
-      (required when invoking this action directly)
+  email:
+    description: Email (overrides app-slug derived email)
     required: false
+    default: ""
+  fullname:
+    description: Full name (overrides app-slug derived name)
+    required: false
+    default: ""
   github-token:
     default: ${{ github.token }}
     description: The GitHub Token
     required: false
   pull-request-url:
-    default:
-      ${{ github.event.pull_request.html_url ||
-      github.event.issue.pull_request.html_url }}
+    default: ${{ github.event.pull_request.html_url || github.event.issue.pull_request.html_url }}
     description: The Pull Request URL
     required: false
   registry:
     default: nixpkgs
     description: Nix registry to use
     required: false
+outputs:
+  method:
+    description: The land method used (ghstack|slpr|ghpr)
+    value: ${{ steps.resolve.outputs.method }}
 runs:
   using: composite
   steps:
+    - id: resolve
+      shell: bash
+      run: |
+        PR_URL="${{ inputs.pull-request-url }}"
+        METHOD="${{ inputs.method }}"
+        if [ -z "$METHOD" ] || [ "$METHOD" = "github-pull-request" ]; then
+          BRANCH=$(gh pr view "$PR_URL" --json headRefName -q .headRefName 2>/dev/null || echo "")
+          if [[ "$BRANCH" =~ ^gh/[^/]+/[0-9]+/head$ ]]; then
+            METHOD="ghstack"
+          elif [[ "$BRANCH" =~ ^pr[0-9]+$ ]]; then
+            METHOD="sapling-pull-request"
+          else
+            METHOD="github-pull-request"
+          fi
+        fi
+        echo "method=$METHOD" >> "$GITHUB_OUTPUT"
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+    - id: bot_identity
+      shell: bash
+      run: |
+        APP_SLUG="${{ inputs.app-slug }}"
+        if [ -n "$APP_SLUG" ]; then
+          BOT_USER=$(gh api "/users/${APP_SLUG}%5Bbot%5D" --jq '.id' 2>/dev/null || echo "")
+          if [ -n "$BOT_USER" ]; then
+            echo "name=${APP_SLUG}[bot]" >> "$GITHUB_OUTPUT"
+            echo "email=${BOT_USER}+${APP_SLUG}%5Bbot%5D@users.noreply.github.com" >> "$GITHUB_OUTPUT"
+          fi
+        fi
+      if: inputs.app-slug != ''
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+    - id: git_config
+      shell: bash
+      run: |
+        GIT_NAME="${{ inputs.fullname }}"
+        GIT_EMAIL="${{ inputs.email }}"
+        if [ -z "$GIT_NAME" ] && [ -n "${{ steps.bot_identity.outputs.name }}" ]; then
+          GIT_NAME="${{ steps.bot_identity.outputs.name }}"
+        fi
+        if [ -z "$GIT_EMAIL" ] && [ -n "${{ steps.bot_identity.outputs.email }}" ]; then
+          GIT_EMAIL="${{ steps.bot_identity.outputs.email }}"
+        fi
+        if [ -z "$GIT_NAME" ]; then GIT_NAME="github-actions[bot]"; fi
+        if [ -z "$GIT_EMAIL" ]; then GIT_EMAIL="github-actions[bot]@users.noreply.github.com"; fi
+        git config --global user.name "$GIT_NAME"
+        git config --global user.email "$GIT_EMAIL"
     - env:
         INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
         INPUT_REGISTRY: ${{ inputs.registry }}
-      if: inputs.method == 'ghstack'
+      if: steps.resolve.outputs.method == 'ghstack'
       run: nix run "$INPUT_REGISTRY#ghstack" -- land "$INPUT_PULL_REQUEST_URL"
       shell: bash
     - env:
@@ -39,20 +94,41 @@ runs:
         INPUT_BASE: ${{ inputs.base }}
         INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
         INPUT_REGISTRY: ${{ inputs.registry }}
-      if: inputs.method == 'sapling-pull-request'
+      if: steps.resolve.outputs.method == 'sapling-pull-request'
       run: |
+        nix run "$INPUT_REGISTRY#sapling" -- config --local ui.username "$(git config --global user.name) <$(git config --global user.email)>"
         nix run "$INPUT_REGISTRY#sapling" -- rebase --dest "$INPUT_BASE"
         nix run "$INPUT_REGISTRY#sapling" -- push --to "$INPUT_BASE"
         DELETE_BRANCH=$(gh pr view "$INPUT_PULL_REQUEST_URL" --json headRefName -q .headRefName)
         nix run "$INPUT_REGISTRY#sapling" -- push --delete "$DELETE_BRANCH"
       shell: bash
-    - env:
+    - id: land_ghpr
+      env:
         GH_TOKEN: ${{ inputs.github-token }}
+        INPUT_BASE: ${{ inputs.base }}
         INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
-      if: inputs.method == 'github-pull-request'
+        INPUT_REGISTRY: ${{ inputs.registry }}
+      if: steps.resolve.outputs.method == 'github-pull-request'
       run: |
-        gh pr merge \
-          --rebase \
-          --delete-branch \
-          "$INPUT_PULL_REQUEST_URL"
+        nix run "$INPUT_REGISTRY#jujutsu" -- config set --repo signing.backend gpg
+        nix run "$INPUT_REGISTRY#jujutsu" -- config set --repo signing.sign-all true
+        nix run "$INPUT_REGISTRY#jujutsu" -- git init --colocate || true
+        nix run "$INPUT_REGISTRY#jujutsu" -- git fetch --remote origin
+        nix run "$INPUT_REGISTRY#jujutsu" -- config set --repo templates.git_push_bookmark "\"${USERNAME}/push-\" ++ change_id.short()"
+        nix run "$INPUT_REGISTRY#jujutsu" -- new "$INPUT_BASE@origin"
+        nix run "$INPUT_REGISTRY#jujutsu" -- rebase -b @ -s "$(gh pr view "$INPUT_PULL_REQUEST_URL" --json headRefName -q .headRefName)@origin"
+        nix run "$INPUT_REGISTRY#jujutsu" -- git push --change @
+
+        PR_NUMBER=$(gh pr view "$INPUT_PULL_REQUEST_URL" --json number -q .number)
+        echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
       shell: bash
+    - uses: octokit/request-action@v2.x
+      if: steps.resolve.outputs.method == 'github-pull-request'
+      with:
+        route: PUT /repos/{owner}/{repo}/pulls/{pull_number}/merge
+        owner: ${{ github.repository_owner }}
+        repo: ${{ github.event.repository.name }}
+        pull_number: ${{ steps.land_ghpr.outputs.pr_number }}
+        merge_method: rebase
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}

@@ -1,6 +1,10 @@
 name: Checkout
 description: Checkout repository with method-appropriate defaults
 inputs:
+  app-slug:
+    description: App slug from actions/create-github-app-token outputs (for bot identity)
+    required: false
+    default: ""
   github-token:
     default: ${{ github.token }}
     description: The GitHub Token
@@ -14,12 +18,12 @@ inputs:
     description: Nix registry to use
     required: false
   email:
-    default: github-actions[bot]@users.noreply.github.com
-    description: Email for sapling identity
+    default: ""
+    description: Email (overrides app-slug derived email)
     required: false
   fullname:
-    default: github-actions[bot]
-    description: Full name for sapling identity
+    default: ""
+    description: Full name (overrides app-slug derived name)
     required: false
   github-url:
     default: github.com
@@ -120,15 +124,40 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.github-token }}
         INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
-    - env:
-        INPUT_EMAIL: ${{ inputs.email }}
-        INPUT_FULLNAME: ${{ inputs.fullname }}
-        INPUT_REGISTRY: ${{ inputs.registry }}
+    - id: bot_identity
+      shell: bash
+      run: |
+        APP_SLUG="${{ inputs.app-slug }}"
+        if [ -n "$APP_SLUG" ]; then
+          BOT_USER=$(gh api "/users/${APP_SLUG}%5Bbot%5D" --jq '.id' 2>/dev/null || echo "")
+          if [ -n "$BOT_USER" ]; then
+            echo "name=${APP_SLUG}[bot]" >> "$GITHUB_OUTPUT"
+            echo "email=${BOT_USER}+${APP_SLUG}%5Bbot%5D@users.noreply.github.com" >> "$GITHUB_OUTPUT"
+          fi
+        fi
+      if: inputs.app-slug != ''
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+    - id: git_config
+      shell: bash
+      run: |
+        GIT_NAME="${{ inputs.fullname }}"
+        GIT_EMAIL="${{ inputs.email }}"
+        if [ -z "$GIT_NAME" ] && [ -n "${{ steps.bot_identity.outputs.name }}" ]; then
+          GIT_NAME="${{ steps.bot_identity.outputs.name }}"
+        fi
+        if [ -z "$GIT_EMAIL" ] && [ -n "${{ steps.bot_identity.outputs.email }}" ]; then
+          GIT_EMAIL="${{ steps.bot_identity.outputs.email }}"
+        fi
+        if [ -z "$GIT_NAME" ]; then GIT_NAME="github-actions[bot]"; fi
+        if [ -z "$GIT_EMAIL" ]; then GIT_EMAIL="github-actions[bot]@users.noreply.github.com"; fi
+        git config --global user.name "$GIT_NAME"
+        git config --global user.email "$GIT_EMAIL"
+    - shell: bash
       if: steps.stack.outputs.method == 'sapling-pull-request'
       run: |
-        nix run "$INPUT_REGISTRY#sapling" -- config \
-          --local ui.username "$INPUT_FULLNAME <$INPUT_EMAIL>"
-      shell: bash
+        nix run "${{ inputs.registry }}#sapling" -- config \
+          --local ui.username "$(git config --global user.name) <$(git config --global user.email)>"
     - env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
         INPUT_GITHUB_URL: ${{ inputs.github-url }}
@@ -156,26 +185,21 @@ runs:
         INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
         INPUT_REGISTRY: ${{ inputs.registry }}
       if:
-        inputs.pull-request-url != '' && steps.stack.outputs.method ==
-        'sapling-pull-request'
+        inputs.pull-request-url != '' && steps.stack.outputs.method == 'sapling-pull-request'
       run: |
-        nix run "$INPUT_REGISTRY#sapling" -- pr pull \
-          --goto \
-          "$INPUT_PULL_REQUEST_URL"
+        nix run "$INPUT_REGISTRY#sapling" -- pr pull --goto "$INPUT_PULL_REQUEST_URL"
       shell: bash
     - env:
         GH_TOKEN: ${{ inputs.github-token }}
         INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
       if:
-        inputs.pull-request-url != '' && steps.stack.outputs.method ==
-        'github-pull-request'
+        inputs.pull-request-url != '' && steps.stack.outputs.method == 'github-pull-request'
       run: gh pr checkout "$INPUT_PULL_REQUEST_URL"
       shell: bash
     - env:
         INPUT_REGISTRY: ${{ inputs.registry }}
       if:
-        inputs.pull-request-url != '' && steps.stack.outputs.method ==
-        'github-pull-request' && inputs.sign-commits == 'true'
+        inputs.pull-request-url != '' && steps.stack.outputs.method == 'github-pull-request' && inputs.sign-commits == 'true'
       run: |
         nix run "$INPUT_REGISTRY#jujutsu" -- git init --colocate
       shell: bash
@@ -191,24 +215,17 @@ runs:
         KEY_ID: ${{ steps.gpg.outputs.keyid }}
         INPUT_REGISTRY: ${{ inputs.registry }}
       if:
-        ${{ steps.stack.outputs.method == 'sapling-pull-request' &&
-        inputs.sign-commits == 'true' }}
+        ${{ steps.stack.outputs.method == 'sapling-pull-request' && inputs.sign-commits == 'true' }}
       run: |
-        nix run "$INPUT_REGISTRY#sapling" -- config \
-          --local gpg.key "$KEY_ID" \
-          --local commit.gpgsign true
+        nix run "$INPUT_REGISTRY#sapling" -- config --local gpg.key "$KEY_ID" --local commit.gpgsign true
       shell: bash
     - env:
         KEY_ID: ${{ steps.gpg.outputs.keyid }}
         INPUT_REGISTRY: ${{ inputs.registry }}
       if:
-        ${{ steps.stack.outputs.method == 'github-pull-request' &&
-        inputs.sign-commits == 'true' }}
+        ${{ steps.stack.outputs.method == 'github-pull-request' && inputs.sign-commits == 'true' }}
       run: |
-        nix run "$INPUT_REGISTRY#jujutsu" -- config set \
-          --repo signing.backend gpg
-        nix run "$INPUT_REGISTRY#jujutsu" -- config set \
-          --repo signing.sign-all true
-        nix run "$INPUT_REGISTRY#jujutsu" -- config set \
-          --repo signing.key "$KEY_ID"
+        nix run "$INPUT_REGISTRY#jujutsu" -- config set --repo signing.backend gpg
+        nix run "$INPUT_REGISTRY#jujutsu" -- config set --repo signing.sign-all true
+        nix run "$INPUT_REGISTRY#jujutsu" -- config set --repo signing.key "$KEY_ID"
       shell: bash

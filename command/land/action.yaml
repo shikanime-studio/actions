@@ -52,12 +52,22 @@ inputs:
 runs:
   using: composite
   steps:
+    - id: createGithubAppToken
+      uses: actions/create-github-app-token@v3
+      with:
+        app-id: ${{ vars.OPERATOR_APP_ID }}
+        permission-administration: read
+        permission-contents: write
+        permission-issues: write
+        permission-pull-requests: write
+        permission-workflows: write
+        private-key: ${{ secrets.OPERATOR_PRIVATE_KEY }}
     - id: command
       uses: github/command@v2
       with:
         allowed_contexts: pull_request
         command: .land
-        github_token: ${{ inputs.github-token }}
+        github_token: ${{ steps.createGithubAppToken.outputs.token }}
         permissions: ${{ inputs.permissions }}
         reaction: ${{ inputs.reaction }}
     - id: command-force
@@ -65,7 +75,7 @@ runs:
       with:
         allowed_contexts: pull_request
         command: .force-land
-        github_token: ${{ inputs.github-token }}
+        github_token: ${{ steps.createGithubAppToken.outputs.token }}
         permissions: ${{ inputs.permissions }}
         reaction: ${{ inputs.reaction }}
         skip_ci: true
@@ -75,9 +85,8 @@ runs:
         steps.command-force.outputs.continue == 'true'
       uses: shikanime-studio/actions/checkout@v9
       with:
-        email: ${{ inputs.email }}
-        fullname: ${{ inputs.fullname }}
-        github-token: ${{ inputs.github-token }}
+        app-slug: ${{ steps.createGithubAppToken.outputs.app-slug }}
+        github-token: ${{ steps.createGithubAppToken.outputs.token }}
         gpg-passphrase: ${{ inputs.gpg-passphrase }}
         gpg-private-key: ${{ inputs.gpg-private-key }}
         pull-request-url: ${{ inputs.pull-request-url }}
@@ -92,12 +101,12 @@ runs:
       uses: shikanime-studio/actions/land@v9
       with:
         base: ${{ inputs.base }}
-        github-token: ${{ inputs.github-token }}
+        github-token: ${{ steps.createGithubAppToken.outputs.token }}
         method: ${{ steps.checkout.outputs.method }}
         pull-request-url: ${{ inputs.pull-request-url }}
         registry: ${{ inputs.registry }}
     - env:
-        GH_TOKEN: ${{ inputs.github-token }}
+        GH_TOKEN: ${{ steps.createGithubAppToken.outputs.token }}
         INPUT_PULL_REQUEST_URL: ${{ inputs.pull-request-url }}
       if: steps.land.outcome == 'failure'
       run: |
