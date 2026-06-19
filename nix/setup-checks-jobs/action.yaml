@@ -21,25 +21,37 @@ runs:
   steps:
     - id: matrix
       run: |
-        JSON="$(nix flake show --json --all-systems --accept-flake-config --no-pure-eval)"
-        MATRIX="$(
-          jq -c '
-            .checks as $root
-            | ($root | keys) as $available
-            | (env.INPUT_SYSTEMS | fromjson) as $systems
-            | ($systems | to_entries)
-            | map(. as $pair
-                  | ($pair.value
-                     | map(select(. as $s | $available | index($s)))
-                     | map({system: ., runner: $pair.key})
-                    )
-                )
-            | flatten
-          ' <<< "$JSON"
-        )"
+        MATRIX="[]"
+        CONTINUE="false"
+
+        if ! JSON="$(nix flake show --json --all-systems --accept-flake-config --no-pure-eval 2>/dev/null)"; then
+          echo "::warning::nix flake show failed, skipping checks matrix"
+        elif [ -z "$JSON" ] || [ "$JSON" = "null" ]; then
+          echo "::warning::nix flake show returned empty output"
+        else
+          RESULT="$(
+            jq -c '
+              .checks as $root
+              | ($root | keys) as $available
+              | (env.INPUT_SYSTEMS | fromjson) as $systems
+              | ($systems | to_entries)
+              | map(. as $pair
+                    | ($pair.value
+                       | map(select(. as $s | $available | index($s)))
+                       | map({system: ., runner: $pair.key})
+                      )
+                  )
+              | flatten
+            ' <<< "$JSON" 2>/dev/null
+          )"
+          if [ -n "$RESULT" ] && [ "$RESULT" != "null" ]; then
+            MATRIX="$RESULT"
+            CONTINUE=$([ "$MATRIX" = "[]" ] && echo "false" || echo "true")
+          fi
+        fi
+
         echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
-        continue=$([ "$MATRIX" = "[]" ] && echo "false" || echo "true")
-        echo "continue=$continue" >> "$GITHUB_OUTPUT"
+        echo "continue=$CONTINUE" >> "$GITHUB_OUTPUT"
       shell: bash
       env:
         INPUT_SYSTEMS: ${{ inputs.systems }}
