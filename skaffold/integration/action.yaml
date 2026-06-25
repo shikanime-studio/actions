@@ -8,6 +8,10 @@ inputs:
     default: '["linux/amd64","linux/arm64"]'
     description: JSON array of target platforms
     required: false
+  push:
+    default: "true"
+    description: Whether to push images during build
+    required: false
 outputs:
   manifest:
     description: Rendered manifest YAML
@@ -36,3 +40,4 @@ runs:
       env:
         SKAFFOLD_PLATFORM: ${{ steps.platform.outputs.platform }}
         SKAFFOLD_PROFILE: ${{ inputs.profile }}
+        SKAFFOLD_PUSH: ${{ inputs.push }}
